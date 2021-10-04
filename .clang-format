@@ -1,0 +1,59 @@
+Language: Cpp
+# BasedOnStyle: Chromium
+IndentWidth: 4
+ColumnLimit: 100
+MaxEmptyLinesToKeep: 1
+
+DerivePointerAlignment: false
+PointerAlignment: Left
+AlignAfterOpenBracket: false
+AlignConsecutiveDeclarations: false
+AllowAllParametersOfDeclarationOnNextLine: false
+# AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+BinPackArguments: false
+BinPackParameters: false
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterDefinitionReturnType: false
+AlwaysBreakTemplateDeclarations: true
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AccessModifierOffset: -4
+# SpaceBeforeCtorInitializerColon: false
+# SpaceBeforeInheritanceColon: false
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterEnum: false
+    AfterStruct: false
+    SplitEmptyFunction: false
+    AfterControlStatement: false
+    AfterFunction: false
+    BeforeCatch: true
+    BeforeElse: true
+    IndentBraces: false
+    SplitEmptyFunction: false
+    SplitEmptyRecord: false
+    AfterClass: false
+
+BreakBeforeTernaryOperators: false
+BreakStringLiterals: true
+
+IncludeBlocks: Preserve
+IndentCaseLabels: true
+IndentPPDirectives: AfterHash
+IndentWrappedFunctionNames: true
+NamespaceIndentation: All
+
+PenaltyBreakBeforeFirstCallParameter: 5
+PenaltyReturnTypeOnItsOwnLine: 3
+ReflowComments: true
+SpaceAfterCStyleCast: true
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: ControlStatements
+SpacesInCStyleCastParentheses: false
+SpacesInContainerLiterals: true
+UseTab: Never
