@@ -3,55 +3,31 @@
     // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
-        // {
-        //     "label": "Arduino Verify Current",
-        //     "type": "shell",
-        //     "options": {
-        //         "shell": {
-        //             "executable": "C:\\Windows\\System32\\cmd.exe",
-        //             "args": [
-        //                 "/c"
-        //             ]
-        //         }
-        //     },
-        //     "command": "${workspaceFolder}\\.vscode\\verify.bat",
-        //     "args": [
-        //         "${fileDirname}",
-        //         "${fileBasename}"
-        //     ],
-        //     "presentation": {
-        //         "echo": true,
-        //         "reveal": "always",
-        //         "focus": false,
-        //         "panel": "shared",
-        //         "showReuseMessage": true,
-        //         "clear": true
-        //     },
-        //     "problemMatcher": {
-        //         "owner": "cpp",
-        //         "fileLocation": [
-        //             "relative",
-        //             "${workspaceRoot}"
-        //         ],
-        //         "pattern": {
-        //             "regexp": "(^[a-zA-Z]:\\\\[\\\\\\S|*\\S]?[^:]*).*$\\n\\n(^[^:]*):(\\d+):(\\d+): (error|warning): (.*$)",
-        //             "file": 1,
-        //             "line": 3,
-        //             "column": 4,
-        //             "severity": 5,
-        //             "message": 6
-        //         }
-        //     },
-        //     "group": "build"
-        // },
+        {
+            "command": "cmd",
+            "args": [
+                "/C",
+                "echo ${command:arduino.closeSerialMonitor}"
+            ],
+            "label": "Arduino close serial monitor",
+            "problemMatcher": []
+        },
+        {
+            "command": "cmd",
+            "args": [
+                "/C",
+                "echo ${command:arduino.openSerialMonitor}"
+            ],
+            "label": "Arduino open serial monitor",
+            "problemMatcher": []
+        },
         {
             "label": "Arduino Upload Current",
             "type": "shell",
             "command": "C:\\tools\\Anaconda3\\python.exe",
             "args": [
                 "${workspaceFolder}\\compile.py",
-                "${fileDirname}",
-                "${fileBasename}"
+                "${workspaceFolder}"
             ],
             "presentation": {
                 "echo": true,
@@ -59,7 +35,7 @@
                 "focus": false,
                 "panel": "shared",
                 "showReuseMessage": false,
-                "clear": true
+                "clear": false
             },
             "problemMatcher": {
                 "owner": "cpp",

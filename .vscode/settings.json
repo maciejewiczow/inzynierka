@@ -1,3 +1,6 @@
 {
-    "terminal.integrated.defaultProfile.windows": "Command Prompt"
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "fortran.linterEnabled": false,
+    "fortran.gfortranExecutable": "",
+    "arduino.defaultBaudRate": 9600
 }
