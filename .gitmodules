@@ -1,0 +1,3 @@
+[submodule "lib/KeepMeAlive"]
+	path = lib/KeepMeAlive
+	url = https://github.com/Locoduino/KeepMeAlive.git

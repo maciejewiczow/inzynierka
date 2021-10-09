@@ -20,6 +20,8 @@ proc = subprocess.run(
         portInfo.port,
         "--libraries",
         "D:\\Projekty\\arduinko\\libraries",
+        "--libraries",
+        "./lib",
         sys.argv[1]
     ],
     stdout=sys.stdout,
