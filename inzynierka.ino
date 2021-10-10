@@ -1,22 +1,17 @@
 #include <LiquidCrystal_I2C.h>
 #include <BasicLinearAlgebra.h>
 #include <print_util.h>
-#include <avr/wdt.h>
+#include <KeepMeAlive.h>
 #include "lcd_util.h"
 #include "Mesh.h"
 #include "Config.h"
-#include "Arduino.h"
 
 using namespace lcdut;
 using namespace prnt;
 
 namespace meshconfig {
-    // teoretycznie max 36 elementów zmieści się w pamięci (obliczenia na kolanie)
-    // przymując zużycie 1200 bajtów na same elementy, węzły i macierze globalne
-    constexpr size_t nElements = 15;
+    constexpr size_t nElements = 20;
     constexpr size_t nNodes = nElements + 1;
-
-    // n*sizeof(Node) + n*sizeof(float) + n*sizeof(float)*3
 }
 
 namespace input {
@@ -33,18 +28,14 @@ namespace input {
             t_furnance - temperatura w piecu [deg C] - z termopary
     */
     constexpr float furnanceLength = 0.2; // [m]
-    float v0 = 0.03;    // [m/s]
-    float v1 = 0.04;    // [m/s]
-    float r = 0.05;    // [m]
+    float v0 = 0.005;    // [m/s]
+    float v1 = 0.005;    // [m/s]
+    float r = 0.03;    // [m]
 
     float t0 = 20;      // [deg C]
 }
 
 Config config;
-
-ISR(WDT_vect) {
-    Serial << "Watchdog reset" << endl;
-}
 
 namespace simulation {
     float tauEnd;
@@ -52,11 +43,13 @@ namespace simulation {
     int nIters;
 }
 
-LiquidCrystal_I2C lcd(0x3F, 16, 2);
+LiquidCrystal_I2C lcd{0x3F, 16, 2};
 
 Mesh<meshconfig::nNodes> mesh;
 
 float getTemp() {
+    // return 500.f;
+
     while (Serial.available() < sizeof(float));
 
     float res;
@@ -64,6 +57,23 @@ float getTemp() {
 
     return res;
 }
+
+template<size_t nNodesT>
+struct IterationDataPacket {
+    float tau;
+    int iteration;
+    unsigned nIterations;
+    const size_t nNodes = nNodesT;
+    const size_t nodeSize = sizeof(typename Mesh<nNodesT>::Node);
+    const typename Mesh<nNodesT>::Node* nodes;
+
+    void send() {
+        Serial.write((const byte*)this, sizeof(*this) - sizeof(this->nodes));
+        Serial.write((const byte*)nodes, nodeSize*nNodes);
+    }
+};
+
+IterationDataPacket<meshconfig::nNodes> iterData;
 
 void initializeParams() {
     using namespace simulation;
@@ -83,6 +93,8 @@ void initializeParams() {
     nIters = (tauEnd/dTau) + 1;
     dTau = tauEnd / nIters;
 
+    iterData.nIterations = nIters;
+
     mesh.generate(input::t0, elemSize);
 }
 
@@ -90,38 +102,43 @@ void setup() {
     Serial.begin(9600);
     lcd.init();
     lcd.backlight();
-
-    wdt_enable(WDTO_8S);
+    watchdogTimer.setDelay(8000);
 
     lcd << lcdut::pos(3, 0) << (char)0b10111100 << " Ready " << (char)0b11000101;
 
+    while (!Serial);
+
     initializeParams();
-    Serial << "Params: " << endl
-        << "tauEnd = " << simulation::tauEnd << endl
-        << "dTau = " << simulation::dTau << endl
-        << "nIters = " << simulation::nIters << endl << endl;
+    // Serial << "Params: " << endl
+    //     << "tauEnd = " << simulation::tauEnd << endl
+    //     << "dTau = " << simulation::dTau << endl
+    //     << "nIters = " << simulation::nIters << endl << endl;
+
+    iterData.iteration = 0;
+    iterData.tau = 0.f;
+    iterData.nodes = mesh.nodes;
 }
 
 void loop() {
-    float temp = /* getTemp() */ 400.0;
-
-    // for (int iteration = 0; iteration < simulation::nIters; iteration++) {
-    //     Serial << "Iteration " << iteration << endl;
-
-    //     mesh.integrateStep(simulation::dTau, input::r, temp, config);
-
-    //     tau += simulation::dTau;
-    // }
-
-    lcd << lcdut::clear << lcdut::pos(0, 0) << "Tin = " << mesh.nodes[0].t << lcdut::symbols::deg << "C";
-    lcd << lcdut::pos(0, 1) << "Ts = " << mesh.nodes[meshconfig::nNodes-1].t << lcdut::symbols::deg << "C";
+    static float temp = getTemp();
 
     mesh.integrateStep(simulation::dTau, input::r, temp, config);
 
-    for (const auto& node : mesh.nodes)
-        Serial << "x = " << node.x << ", t = " << node.t << endl;
+    if (iterData.iteration == simulation::nIters) {
+        lcd << lcdut::clear << lcdut::pos(0, 0) << "Wew " << mesh.nodes[0].t << lcdut::symbols::deg << "C";
+        lcd << lcdut::pos(0, 1) << "Zew " << mesh.nodes[meshconfig::nNodes-1].t << lcdut::symbols::deg << "C";
 
+        iterData.iteration = 0;
+        iterData.tau = 0.f;
+        temp = getTemp();
 
-    // Serial << temp << endl;
+        for (auto& node : mesh.nodes)
+            node.t = input::t0;
 
+    } else {
+        iterData.iteration++;
+        iterData.tau += simulation::dTau;
+    }
+
+    iterData.send();
 }

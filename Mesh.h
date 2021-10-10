@@ -2,11 +2,11 @@
 #define MESH_HEADER_GUARD
 
 #include <BasicLinearAlgebra.h>
+#include <KeepMeAlive.h>
 #include "Tridiagonal.h"
 #include "Config.h"
 #include "IntegrationPoints.h"
 #include "print_util.h"
-#include <avr/wdt.h>
 
 using namespace prnt;
 
@@ -30,18 +30,18 @@ public:
     Node nodes[nNodes];
 
     void generate(float t0, float elemSize) {
-        Serial << "Generating the mesh" << endl;
+        // Serial << "Generating the mesh" << endl;
 
         float x = 0;
         for (int i = 0; i < nNodes; i++) {
             nodes[i].t = t0;
             nodes[i].x = x;
 
-            Serial << "Node " << i << ": " << "x = " << x << ", t = " << t0 << endl;
+            // Serial << "Node " << i << ": " << "x = " << x << ", t = " << t0 << endl;
 
             x += elemSize;
         }
-        Serial << endl;
+        // Serial << endl;
     }
 
     void integrateStep(float dTau, float r, float tAmbient, const Config& config) {
@@ -94,6 +94,7 @@ public:
 
                 Plocal(0) += tmp*t*n0/dTau;
                 Plocal(1) += tmp*t*n1/dTau + 2.f*alphaAir*r*tAmbient;
+                watchdogTimer.reset();
             }
 
 
@@ -107,6 +108,7 @@ public:
 
         auto decomposition = BLA::LUDecompose(H);
         auto x = BLA::LUSolve(decomposition, P);
+        watchdogTimer.reset();
 
         for (int i = 0; i < nNodes; i++)
             nodes[i].t = x(i);
