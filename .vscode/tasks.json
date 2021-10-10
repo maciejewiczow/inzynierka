@@ -37,21 +37,7 @@
                 "showReuseMessage": false,
                 "clear": false
             },
-            "problemMatcher": {
-                "owner": "cpp",
-                "fileLocation": [
-                    "relative",
-                    "${workspaceRoot}"
-                ],
-                "pattern": {
-                    "regexp": "(^[a-zA-Z]:\\\\[\\\\\\S|*\\S]?[^:]*).*$\\n\\n(^[^:]*):(\\d+):(\\d+): (error|warning): (.*$)",
-                    "file": 1,
-                    "line": 3,
-                    "column": 4,
-                    "severity": 5,
-                    "message": 6
-                }
-            },
+            "problemMatcher": "$gcc",
             "group": {
                 "kind": "build",
                 "isDefault": true

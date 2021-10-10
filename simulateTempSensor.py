@@ -1,49 +1,48 @@
+from dataclasses import dataclass, field
+from typing import List, cast
 from serial import Serial
 from math import exp, log1p
+import sys
 from sys import argv
+from binaryComunication import ArduinoIterationPacket
+from heatingCurve import heatingCurve
 from util import getAndUpdateArduinoPort
 import time
 import struct
+from matplotlib import pyplot as plt
+import numpy as np
 
 port = getAndUpdateArduinoPort('./.vscode/arduino.json')
 
-serial = Serial(port=port.port, baudrate=9600, timeout=.1)
+serial = Serial(port=port.port, baudrate=9600, timeout=7000)
+time.sleep(8)
+serial.write(0)
+time.sleep(5)
 
-def temp(tau: float):
-    sqrt2pi = 2.506628274631
-    sigma = 0.39
-    mi = -0.6
+tauStart = 1
+tauEnd = 300
+tStart = 20
+tEnd = 4000
 
-    f = lambda x:1.0/(x*sigma*sqrt2pi)*exp(-pow(log1p(x-1) - mi, 2)/(2*sigma*sigma))
-
-    peakStart = 304.444052915472 # [s]
-    peakEnd = 1100.0 # [s]
-
-    tMax = 10000.0 # [deg C]
-    tMin = -180.0 # [deg C]
-
-    tNorm = 0
-    if tau < peakStart:
-        # rise
-        tNorm = f(tau/646.0 + 0.0001)
-    elif peakStart <= tau < peakEnd:
-        # peak
-        tNorm = 2.
-    else:
-        # fall
-        tNorm = f((tau - (peakEnd - peakStart) + 25.081)/646.0 + 0.0001) + 0.041
-
-    tNorm /= 2.
-
-    return tMin + (tMax-tMin)*tNorm
+temp = heatingCurve(tauStart, tStart, tauEnd, tEnd)
 
 firstInter = True
 manualInput = len(argv) > 1
 
+packet = ArduinoIterationPacket()
+
+plt.ion()
+
+figure, (oneCycleAx, allCyclesAx) = plt.subplots(nrows=2, ncols=1, figsize=(10, 8))
+
+oneCycleAx.title.set_text("Temperatura w jednym cyklu")
+allCyclesAx.title.set_text("Temperatura")
+
+oneCycleData = np.array([[0,20,20]])
+allCyclesData = np.array([[tauStart,tStart,tStart,tStart]])
+
 try:
-    tau = 40
-    dt = 1
-    while True:
+    for tau in np.arange(1.0, 300.0, 0.5):
         try:
             if manualInput:
                 try:
@@ -55,15 +54,30 @@ try:
                 print(f"<< {t}")
 
             serial.write(struct.pack('f', t))
-            print(f">> {serial.readline().decode('utf-8').strip()}")
-            print()
+            # print(f">> {serial.readline().decode('utf-8').strip()}")
+            packet.unpackFromSerial(serial)
+            oneCycleData = np.array([[packet.tau, packet.nodes[0].t, packet.nodes[-1].t]])
 
-            if not manualInput:
-                time.sleep(0.3)
+            while packet.iteration < packet.nIterations:
+                packet.unpackFromSerial(serial)
+                oneCycleData = np.append(oneCycleData, [[packet.tau, packet.nodes[0].t, packet.nodes[-1].t]], axis=0)
 
-            tau += dt
+            # print(oneCycleData)
+            oneCycleAx.clear()
+            oneCycleAx.plot(oneCycleData[:,0], oneCycleData[:,1:])
+
+            oneCycleData = np.array([[0,0,0]])
+            allCyclesData = np.append(allCyclesData, [[tau, t, packet.nodes[0].t, packet.nodes[-1].t]], axis=0)
+
+            # print(allCyclesData)
+            allCyclesAx.clear()
+            allCyclesAx.plot(allCyclesData[:,0], allCyclesData[:,1:])
+
+            figure.canvas.draw()
+            figure.canvas.flush_events()
+
         except KeyboardInterrupt:
-            if firstInter:
+            if firstInter and not manualInput:
                 manualInput = True
                 firstInter = False
             else:

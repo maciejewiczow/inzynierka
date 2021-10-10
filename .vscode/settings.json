@@ -2,5 +2,7 @@
     "terminal.integrated.defaultProfile.windows": "Command Prompt",
     "fortran.linterEnabled": false,
     "fortran.gfortranExecutable": "",
-    "arduino.defaultBaudRate": 9600
+    "arduino.defaultBaudRate": 9600,
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "python.terminal.activateEnvironment": true
 }
