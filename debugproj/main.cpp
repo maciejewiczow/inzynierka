@@ -25,7 +25,7 @@ namespace input {
     t_0 - temperatura początkowa wsadu [deg C] - wprowadzać ręcznie/z drugiego czujnika temp pokojowej??
     t_furnance - temperatura w piecu [deg C] - z termopary
     */
-    constexpr float furnanceLength = 0.2f; // [m]
+    constexpr float furnaceLength = 0.2f; // [m]
     float v0 = 0.03f;    // [m/s]
     float v1 = 0.04f;    // [m/s]
     float r = 0.05f;    // [m]
@@ -54,7 +54,7 @@ void initializeParams() {
     //    - prędkość nie zmienia się znacząco na długości pieca
     float v = 1.5f*input::v0 - 0.5f*input::v1;
 
-    tauEnd = input::furnanceLength/v;
+    tauEnd = input::furnaceLength/v;
 
     float a = config.K / (config.C*config.Ro);
     float elemSize = input::r/meshconfig::nElements;

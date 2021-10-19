@@ -4,13 +4,14 @@
 #include <KeepMeAlive.h>
 #include "lcd_util.h"
 #include "Mesh.h"
+#include "Communication.h"
 #include "Config.h"
 
 using namespace lcdut;
 using namespace prnt;
 
 namespace meshconfig {
-    constexpr size_t nElements = 20;
+    constexpr size_t nElements = 5;
     constexpr size_t nNodes = nElements + 1;
 }
 
@@ -27,10 +28,10 @@ namespace input {
             t_0 - temperatura początkowa wsadu [deg C] - wprowadzać ręcznie/z drugiego czujnika temp pokojowej??
             t_furnance - temperatura w piecu [deg C] - z termopary
     */
-    constexpr float furnanceLength = 0.2; // [m]
+    float furnaceLength = 0.2; // [m]
     float v0 = 0.005;    // [m/s]
     float v1 = 0.005;    // [m/s]
-    float r = 0.03;    // [m]
+    float r = 0.002;    // [m]
 
     float t0 = 20;      // [deg C]
 }
@@ -58,22 +59,8 @@ float getTemp() {
     return res;
 }
 
-template<size_t nNodesT>
-struct IterationDataPacket {
-    float tau;
-    int iteration;
-    unsigned nIterations;
-    const size_t nNodes = nNodesT;
-    const size_t nodeSize = sizeof(typename Mesh<nNodesT>::Node);
-    const typename Mesh<nNodesT>::Node* nodes;
-
-    void send() {
-        Serial.write((const byte*)this, sizeof(*this) - sizeof(this->nodes));
-        Serial.write((const byte*)nodes, nodeSize*nNodes);
-    }
-};
-
-IterationDataPacket<meshconfig::nNodes> iterData;
+IterationDataPacket<meshconfig::nNodes> iterData(mesh.nodes);
+BenchmarkDataPacket benchmark;
 
 void initializeParams() {
     using namespace simulation;
@@ -83,13 +70,12 @@ void initializeParams() {
     //    - prędkość nie zmienia się znacząco na długości pieca
     float v = 1.5*input::v0 - 0.5*input::v1;
 
-    tauEnd = input::furnanceLength/v;
+    tauEnd = input::furnaceLength/v;
 
     float a = config.K / (config.C*config.Ro);
     float elemSize = input::r/meshconfig::nElements;
 
     dTau = (elemSize*elemSize)/(0.5*a);
-    // dTau = 0.5;
     nIters = (tauEnd/dTau) + 1;
     dTau = tauEnd / nIters;
 
@@ -99,12 +85,13 @@ void initializeParams() {
 }
 
 void setup() {
-    Serial.begin(9600);
+    Serial.begin(57600);
     lcd.init();
     lcd.backlight();
     watchdogTimer.setDelay(8000);
 
     lcd << lcdut::pos(3, 0) << (char)0b10111100 << " Ready " << (char)0b11000101;
+    // lcd << lcdut::pos(0, 1) << sizeof(unsigned long);
 
     while (!Serial);
 
@@ -122,23 +109,25 @@ void setup() {
 void loop() {
     static float temp = getTemp();
 
-    mesh.integrateStep(simulation::dTau, input::r, temp, config);
+    iterData.send();
 
-    if (iterData.iteration == simulation::nIters) {
+    benchmark.start().send();
+    mesh.integrateStep(simulation::dTau, input::r, temp, config);
+    benchmark.end().send().clear();
+
+    if (iterData.iteration < simulation::nIters) {
+        iterData.iteration++;
+        iterData.tau += simulation::dTau;
+    } else {
         lcd << lcdut::clear << lcdut::pos(0, 0) << "Wew " << mesh.nodes[0].t << lcdut::symbols::deg << "C";
         lcd << lcdut::pos(0, 1) << "Zew " << mesh.nodes[meshconfig::nNodes-1].t << lcdut::symbols::deg << "C";
 
         iterData.iteration = 0;
         iterData.tau = 0.f;
-        temp = getTemp();
 
         for (auto& node : mesh.nodes)
             node.t = input::t0;
 
-    } else {
-        iterData.iteration++;
-        iterData.tau += simulation::dTau;
+        temp = getTemp();
     }
-
-    iterData.send();
 }

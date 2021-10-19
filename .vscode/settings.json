@@ -2,7 +2,17 @@
     "terminal.integrated.defaultProfile.windows": "Command Prompt",
     "fortran.linterEnabled": false,
     "fortran.gfortranExecutable": "",
-    "arduino.defaultBaudRate": 9600,
+    "arduino.defaultBaudRate": 57600,
     "python.terminal.activateEnvInCurrentTerminal": true,
-    "python.terminal.activateEnvironment": true
+    "python.terminal.activateEnvironment": true,
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                "scope": "meta.function-call.generic.python",
+                "settings": {
+                    "foreground": "#c3cb4c"
+                }
+            }
+        ]
+    }
 }
