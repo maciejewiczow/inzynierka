@@ -1,3 +1,6 @@
 [submodule "lib/KeepMeAlive"]
 	path = lib/KeepMeAlive
 	url = https://github.com/Locoduino/KeepMeAlive.git
+[submodule "lib/InputDebounce"]
+	path = lib/InputDebounce
+	url = https://github.com/Mokolea/InputDebounce.git
