@@ -5,7 +5,7 @@
 #include <print_util.h>
 #include <EEPROM.h>
 #include "lcd_util.h"
-#include "Communication.h"
+#include "communication.h"
 #include "Config.h"
 #include "Menu.h"
 #include "Mesh.h"

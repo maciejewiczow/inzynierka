@@ -3,7 +3,7 @@ from typing import List, Optional
 from serial import Serial
 import os
 from os import path
-from Comunication import ArduinoBenchmarkPacket, ArduinoIterationPacket, Packet, totalMicrosecons
+from communication import ArduinoBenchmarkPacket, ArduinoIterationPacket, Packet, totalMicrosecons
 from heatingCurve import heatingCurve
 from util import getAndUpdateArduinoPort
 import time
