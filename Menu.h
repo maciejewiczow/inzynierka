@@ -96,9 +96,6 @@ private:
         if (current) {
             *current->value = atof(valueBuffer);
 
-            if (m_onUpdate)
-                m_onUpdate();
-
             // Serial << current->name << " set to ";
             // Serial.println(*current->value, 8);
         }
@@ -110,6 +107,9 @@ private:
         } else {
             current = nullptr;
             output.clear();
+
+            if (m_onUpdate)
+                m_onUpdate();
         }
 
         if (current)

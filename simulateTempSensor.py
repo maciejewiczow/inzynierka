@@ -113,6 +113,11 @@ try:
 
             while iterPacket.iteration < iterPacket.nIterations:
                 iterPacket.unpackFromSerial(serial)
+
+                # check if the params were changed mid-cycle and the cycle is reset on Arduino side
+                if iterPacket.iteration == 0:
+                    break
+
                 # first packet - before integration step starts
                 startTime = datetime.now()
                 benchmarkPacket = Packet.readFromSerial(serial)

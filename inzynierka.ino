@@ -3,16 +3,22 @@
 #include <KeepMeAlive.h>
 #include <LiquidCrystal_I2C.h>
 #include <print_util.h>
+#include <EEPROM.h>
 #include "lcd_util.h"
 #include "Communication.h"
 #include "Config.h"
 #include "Menu.h"
 #include "Mesh.h"
 
+#define SERIAL_BAUD 57600
+
 #define SET_BUTTON_PIN 7
 #define LEFT_BUTTON_PIN 8
 #define RIGHT_BUTTON_PIN 9
 #define INCREMENT_BUTTON_PIN 10
+
+#define EEPROM_INPUT_PARAMS_ADDR 0
+#define EEPROM_READ_INDICATOR_VAL 69
 
 using namespace lcdut;
 using namespace prnt;
@@ -22,7 +28,7 @@ namespace meshconfig {
     constexpr size_t nNodes = nElements + 1;
 } // namespace meshconfig
 
-namespace input {
+struct Input {
     /*
     Stałe parametry:
         len - długość pieca [m] - zmienna kompilacji
@@ -41,8 +47,9 @@ namespace input {
     float r = 0.002;           // [m]
 
     float t0 = 20; // [deg C]
-} // namespace input
+};
 
+Input input;
 Config config;
 
 namespace simulation {
@@ -68,18 +75,18 @@ float getTemp() {
 IterationDataPacket<meshconfig::nNodes> iterData{mesh.nodes};
 BenchmarkDataPacket benchmark;
 
-void initializeParams() {
+void calculateSimulationParams() {
     using namespace simulation;
     // założenia:
     //    - liniowe przyspieszenie między v0 i v1
     //    - piec jest po środku między szpulami
     //    - prędkość nie zmienia się znacząco na długości pieca
-    float v = 1.5 * input::v0 - 0.5 * input::v1;
+    float v = 1.5 * input.v0 - 0.5 * input.v1;
 
-    tauEnd = input::furnaceLength / v;
+    tauEnd = input.furnaceLength / v;
 
     float a = config.K / (config.C * config.Ro);
-    float elemSize = input::r / meshconfig::nElements;
+    float elemSize = input.r / meshconfig::nElements;
 
     dTau = (elemSize * elemSize) / (0.5 * a);
     nIters = (tauEnd / dTau) + 1;
@@ -89,21 +96,26 @@ void initializeParams() {
     iterData.iteration = 0;
     iterData.tau = 0.f;
 
-    mesh.generate(input::t0, elemSize);
+    mesh.generate(input.t0, elemSize);
 }
 
-Menu::Item items[] = {
-    {"Dl. pieca [m]", &input::furnaceLength},
-    {"v0 [m/s]", &input::v0},
-    {"v1 [m/s]", &input::v1},
-    {"Promien [m]", &input::r},
-    {"t0 [C]", &input::t0}
+void updateEEPROM() {
+    EEPROM.update(EEPROM_INPUT_PARAMS_ADDR, EEPROM_READ_INDICATOR_VAL);
+    EEPROM.put(EEPROM_INPUT_PARAMS_ADDR + 1, input);
+}
+
+Menu::Item menuItems[] = {
+    { "t0 [C]",              &input.t0              },
+    { "Promien wsadu[m]",    &input.r               },
+    { "v0 [m/s]",            &input.v0              },
+    { "v1 [m/s]",            &input.v1              },
+    { "Dlg. pieca [m]",      &input.furnaceLength   },
 };
 
-Menu menu{lcd, items};
+Menu menu{lcd, menuItems};
 
 void setup() {
-    Serial.begin(57600);
+    Serial.begin(SERIAL_BAUD);
     lcd.init();
     lcd.backlight();
     watchdogTimer.setDelay(8000);
@@ -114,14 +126,20 @@ void setup() {
     while (!Serial)
         ;
 
-    initializeParams();
+    if (EEPROM.read(EEPROM_INPUT_PARAMS_ADDR) == EEPROM_READ_INDICATOR_VAL)
+        EEPROM.get(EEPROM_INPUT_PARAMS_ADDR + 1, input);
+
+    calculateSimulationParams();
     // Serial << "Params: " << endl
     //     << "tauEnd = " << simulation::tauEnd << endl
     //     << "dTau = " << simulation::dTau << endl
     //     << "nIters = " << simulation::nIters << endl << endl;
 
     menu.setup(SET_BUTTON_PIN, LEFT_BUTTON_PIN, RIGHT_BUTTON_PIN, INCREMENT_BUTTON_PIN);
-    menu.onParamUpdate(&initializeParams);
+    menu.onParamUpdate([](){
+        calculateSimulationParams();
+        updateEEPROM();
+    });
 }
 
 void loop() {
@@ -138,7 +156,7 @@ void loop() {
     iterData.send();
 
     benchmark.start().send();
-    mesh.integrateStep(simulation::dTau, input::r, temp, config);
+    mesh.integrateStep(simulation::dTau, input.r, temp, config);
     benchmark.end().send().clear();
 
     if (iterData.iteration < simulation::nIters) {
@@ -155,7 +173,7 @@ void loop() {
         iterData.tau = 0.f;
 
         for (auto& node : mesh.nodes)
-            node.t = input::t0;
+            node.t = input.t0;
 
         temp = getTemp();
     }
