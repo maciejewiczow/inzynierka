@@ -9,8 +9,6 @@
 using namespace lcdut;
 using namespace prnt;
 
-constexpr size_t nItems = 4;
-
 bool operator==(const InputDebounce& a, const InputDebounce& b) {
     return a.getPinIn() == b.getPinIn();
 }
@@ -32,6 +30,7 @@ void swap(T& a, T& b) {
     b = tmp;
 }
 
+template<size_t nItems>
 class Menu {
 public:
     struct Item {
@@ -102,7 +101,7 @@ private:
 
         if (!current) {
             current = items;
-        } else if (current < items+nItems) {
+        } else if (current < items + nItems - 1) {
             current++;
         } else {
             current = nullptr;

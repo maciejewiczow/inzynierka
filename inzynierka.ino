@@ -104,7 +104,7 @@ void updateEEPROM() {
     EEPROM.put(EEPROM_INPUT_PARAMS_ADDR + 1, input);
 }
 
-Menu::Item menuItems[] = {
+Menu<5>::Item menuItems[] = {
     { "t0 [C]",              &input.t0              },
     { "Promien wsadu[m]",    &input.r               },
     { "v0 [m/s]",            &input.v0              },
@@ -112,7 +112,7 @@ Menu::Item menuItems[] = {
     { "Dlg. pieca [m]",      &input.furnaceLength   },
 };
 
-Menu menu{lcd, menuItems};
+Menu<5> menu{lcd, menuItems};
 
 void setup() {
     Serial.begin(SERIAL_BAUD);
