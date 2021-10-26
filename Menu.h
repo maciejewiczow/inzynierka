@@ -51,7 +51,7 @@ private:
 
     char valueBuffer[lcdColumns + 1];
 
-    static const int8_t maxDigits = 8;
+    static constexpr int8_t maxDigits = 8;
 
     struct MenuInputDebounce : public InputDebounce {
         Menu& menu;
@@ -172,7 +172,7 @@ private:
         if (prec < 0)
             prec = 0;
 
-        dtostrf(*current->value, 8, prec, valueBuffer);
+        dtostrf(*current->value, maxDigits, prec, valueBuffer);
 
         // for (auto c : valueBuffer) {
         //     Serial << (int) c;

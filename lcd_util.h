@@ -4,7 +4,6 @@
 #include <LiquidCrystal_I2C.h>
 
 namespace lcdut {
-
     namespace symbols {
         constexpr char deg = 223;
         constexpr char alpha = 0b11100000;
