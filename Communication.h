@@ -1,7 +1,9 @@
 #ifndef COMMUNICATION_HEADER_GUARD
 #define COMMUNICATION_HEADER_GUARD
 
-enum class PacketType {
+#include "Mesh.h"
+
+enum class PacketType : unsigned int {
     InvalidPacket,
     IterationData,
     BenchmarkData

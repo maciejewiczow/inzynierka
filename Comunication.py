@@ -14,13 +14,13 @@ class PacketType(IntEnum):
 @dataclass
 class Packet:
     type: PacketType = PacketType.InvalidPacket
-    lenght: int = 0
+    length: int = 0
 
     def unpackHeader(self, serial: Serial):
         data = serial.read(2*2)
         type, length = struct.unpack('HH', data)
         self.type = type
-        self.lenght = length
+        self.length = length
 
     @staticmethod
     def readFromSerial(serial: Serial):
@@ -34,7 +34,7 @@ class Packet:
 
         packet = PacketClass()
         packet.type = packetBase.type
-        packet.lenght = packetBase.lenght
+        packet.length = packetBase.length
         packet.unpackFromSerial(serial, unpackHeader=False)
 
         return packet
@@ -65,7 +65,7 @@ class ArduinoIterationPacket(Packet):
         if unpackHeader:
             self.unpackHeader(serial)
 
-        data = serial.read(self.lenght)
+        data = serial.read(self.length)
 
         tau, iteration, nIterations, nNodes, nodeSize = struct.unpack('fhHHH', data)
         self.tau = tau
@@ -100,7 +100,7 @@ class ArduinoBenchmarkPacket(Packet):
         if unpackHeader:
             self.unpackHeader(serial)
 
-        microsStart, microsEnd = struct.unpack('LL', serial.read(self.lenght))
+        microsStart, microsEnd = struct.unpack('LL', serial.read(self.length))
 
         # if self.pcTimeStart and not self.pcTimeEnd:
         #     self.pcTimeEnd = datetime.now()
