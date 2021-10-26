@@ -27,9 +27,13 @@ namespace lcdut {
         return lcd;
     }
 
-    LiquidCrystal_I2C& operator<<(LiquidCrystal_I2C& lcd, LiquidCrystal_I2C& (*modifier)(LiquidCrystal_I2C&) ) {
-        modifier(lcd);
+    LiquidCrystal_I2C& home(LiquidCrystal_I2C& lcd) {
+        lcd.home();
         return lcd;
+    }
+
+    LiquidCrystal_I2C& operator<<(LiquidCrystal_I2C& lcd, LiquidCrystal_I2C& (*modifier)(LiquidCrystal_I2C&) ) {
+        return modifier(lcd);
     }
 }
 
