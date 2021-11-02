@@ -53,7 +53,7 @@ oneCycleAx.legend(oneCycleLines, ['Temp wewnętrzna', 'Temp zewnętrzna'])
 allCyclesLines = allCyclesAx.plot(allCyclesData[:,0], allCyclesData[:,1:])
 allCyclesAx.legend(allCyclesLines, ['Temp pieca', 'Końcowa temp wewn', 'Końcowa temp zewn'])
 
-port = getAndUpdateArduinoPort('./.vscode/arduino.json')
+_, port = getAndUpdateArduinoPort('./.vscode/arduino.json')
 
 serial = Serial(port=port.port, baudrate=57600, timeout=7000)
 time.sleep(8)

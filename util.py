@@ -1,5 +1,5 @@
 from json.decoder import JSONDecodeError
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from dataclasses import dataclass
 from shlex import split
 from subprocess import run, PIPE, STDOUT
@@ -10,11 +10,11 @@ import json
 @dataclass
 class ArduinoPortInfo:
     port: str
-    protocol: str
-    type: str
-    boardName: str
     FQBN: str
-    core: str
+    protocol: str = None
+    type: str = None
+    boardName: str = None
+    core: str = None
 
 def getArduinoPorts() -> List[ArduinoPortInfo]:
     lines = bash('arduino-cli board list').split('\n')
@@ -57,22 +57,24 @@ def getArduinoPorts() -> List[ArduinoPortInfo]:
 
     return ports
 
-def getAndUpdateArduinoPort(configFilePath: str) -> Optional[ArduinoPortInfo]:
+def getAndUpdateArduinoPort(configFilePath: str) -> Tuple[bool, ArduinoPortInfo]:
     config = dict()
     ports = getArduinoPorts()
-
-    if not ports:
-        warnings.warn("No arduino board is connected!")
-        return
 
     try:
         with open(configFilePath) as json_file:
             config = json.load(json_file)
 
+        if not ports:
+            return False, ArduinoPortInfo(
+                port=config['port'],
+                FQBN=config['board']
+            )
+
         matchingPorts = [p for p in ports if p.port == config['port'] and p.FQBN == config['board']]
 
         if matchingPorts:
-            return matchingPorts[0]
+            return True, matchingPorts[0]
 
         warnings.warn("Port and FQBN found in config does not match any of the connected boards. Updating config...")
 
@@ -97,7 +99,7 @@ def getAndUpdateArduinoPort(configFilePath: str) -> Optional[ArduinoPortInfo]:
         except IOError:
             warnings.warn("Arduino config file could not be opened")
 
-    return port
+    return True, port
 
 def bash(cmd, *args):
     argv = [cmd]

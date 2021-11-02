@@ -3,27 +3,28 @@ import warnings
 import subprocess
 from util import getAndUpdateArduinoPort
 
-portInfo = getAndUpdateArduinoPort('./.vscode/arduino.json')
+arduinoPresent, portInfo = getAndUpdateArduinoPort('./.vscode/arduino.json')
 
-if not portInfo:
-    warnings.warn("No arduino board detected! Make sure the arduino is connected")
-    exit(1)
+if not arduinoPresent:
+    warnings.warn("No arduino board detected! Project will be only compiled, without upload")
+
+args = [
+    "arduino-cli", "compile",
+    "--libraries", "D:\\Projekty\\arduinko\\libraries",
+    "--libraries", "./lib",
+    "-b", portInfo.FQBN,
+]
+
+if arduinoPresent:
+    args.extend([
+        "-p", portInfo.port,
+        "-u",
+    ])
+
+args.append(sys.argv[1])
 
 proc = subprocess.run(
-    [
-        "arduino-cli",
-        "compile",
-        "-b",
-        portInfo.FQBN,
-        "-u",
-        "-p",
-        portInfo.port,
-        "--libraries",
-        "D:\\Projekty\\arduinko\\libraries",
-        "--libraries",
-        "./lib",
-        sys.argv[1]
-    ],
+    args,
     stdout=sys.stdout,
     stderr=sys.stderr,
 )
