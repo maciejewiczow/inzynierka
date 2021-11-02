@@ -52,8 +52,10 @@ private:
             DBG_Serial("line " << i << " (string): " << start << endl);
             DBG_Serial("line " << i << " (ints):   ");
 
+            #if DEBUG_PRINTS
             for (auto j = start; j < start + nColsT; j++)
                 DBG_Serial((uint8_t) *start << ' ');
+            #endif
 
             DBG_Serial(endl);
         }

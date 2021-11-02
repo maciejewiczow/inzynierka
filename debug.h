@@ -1,11 +1,11 @@
 #ifndef UTIL_HEADER_GUARD
 #define UTIL_HEADER_GUARD
 
-// #define DEBUG_PRINTS
+#define DEBUG_PRINTS false
 
 #define DBG_HEADER() __func__ << ": "
 
-#if defined(DEBUG_PRINTS)
+#if DEBUG_PRINTS
 #   define DBG_Serial(x) Serial << x
 #else
 #   define DBG_Serial(x)
