@@ -9,6 +9,7 @@
 #include "Config.h"
 #include "Menu.h"
 #include "Mesh.h"
+#include "BufferedLcd.h"
 
 #define SERIAL_BAUD 57600
 
@@ -19,6 +20,8 @@
 
 #define EEPROM_INPUT_PARAMS_ADDR 0
 #define EEPROM_READ_INDICATOR_VAL 69
+
+#define LCD_I2C_ADDRESS 0x3F
 
 using namespace lcdut;
 using namespace prnt;
@@ -58,7 +61,7 @@ namespace simulation {
     int nIters;
 } // namespace simulation
 
-LiquidCrystal_I2C lcd{0x3F, 16, 2};
+BufferedLcd<16, 2> lcd{LCD_I2C_ADDRESS};
 
 Mesh<meshconfig::nNodes> mesh;
 
@@ -104,7 +107,7 @@ void updateEEPROM() {
     EEPROM.put(EEPROM_INPUT_PARAMS_ADDR + 1, input);
 }
 
-Menu<5>::Item menuItems[] = {
+Menu<5, lcd.cols, lcd.rows>::Item menuItems[] = {
     { "t0 [C]",              &input.t0              },
     { "Promien wsadu[m]",    &input.r               },
     { "v0 [m/s]",            &input.v0              },
@@ -112,7 +115,7 @@ Menu<5>::Item menuItems[] = {
     { "Dlg. pieca [m]",      &input.furnaceLength   },
 };
 
-Menu<5> menu{lcd, menuItems};
+Menu<5, lcd.cols, lcd.rows> menu{lcd, menuItems};
 
 void setup() {
     Serial.begin(SERIAL_BAUD);
@@ -120,11 +123,12 @@ void setup() {
     lcd.backlight();
     watchdogTimer.setDelay(8000);
 
-    lcd << pos(3, 0) << (char) 0b10111100 << " Ready " << (char) 0b11000101;
     // lcd << pos(0, 1) << sizeof(unsigned long);
-
     while (!Serial)
         ;
+
+    lcd << pos(3, 0) << (char) 0b10111100 << " Ready " << (char) 0b11000101;
+    lcd.flush();
 
     if (EEPROM.read(EEPROM_INPUT_PARAMS_ADDR) == EEPROM_READ_INDICATOR_VAL)
         EEPROM.get(EEPROM_INPUT_PARAMS_ADDR + 1, input);
@@ -168,6 +172,8 @@ void loop() {
             << "C";
         lcd << pos(0, 1) << "Zew " << mesh.nodes[meshconfig::nNodes - 1].t
             << symbols::deg << "C";
+
+        lcd.flush();
 
         iterData.iteration = 0;
         iterData.tau = 0.f;

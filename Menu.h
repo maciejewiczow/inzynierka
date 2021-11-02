@@ -5,6 +5,7 @@
 #include <InputDebounce.h>
 #include <print_util.h>
 #include "lcd_util.h"
+#include "BufferedLcd.h"
 
 using namespace lcdut;
 using namespace prnt;
@@ -30,7 +31,9 @@ void swap(T& a, T& b) {
     b = tmp;
 }
 
-template<size_t nItems>
+// constexpr size_t nItems = 5;
+
+template<size_t nItems, uint8_t nLcdCols, uint8_t nLcdRows>
 class Menu {
 public:
     struct Item {
@@ -39,19 +42,19 @@ public:
     };
 
     using updateCb = void (*)();
+    using lcdT = BufferedLcd<nLcdCols, nLcdRows>;
 
 private:
     Item* items;
     Item* current;
     uint8_t position;
-    LiquidCrystal_I2C& output;
+    lcdT& output;
     updateCb m_onUpdate = nullptr;
 
-    static constexpr size_t lcdColumns = 16;
+    char savedScreenBuffer[lcdT::size];
+    char valueBuffer[lcdT::cols + 1];
 
-    char valueBuffer[lcdColumns + 1];
-
-    static constexpr int8_t maxDigits = 8;
+    static constexpr int8_t maxDigits = 7;
 
     struct MenuInputDebounce : public InputDebounce {
         Menu& menu;
@@ -89,6 +92,18 @@ private:
             handleIncButtonPress();
     }
 
+    void beginMenuMode() {
+        output.cursor_on();
+        // output.blink_on();
+        output.saveContents(savedScreenBuffer);
+    }
+
+    void endMenuMode() {
+        // output.blink_off();
+        output.cursor_off();
+        output.restoreContents(savedScreenBuffer);
+    }
+
     void handleSetButtonPress() {
         position = 0;
 
@@ -100,12 +115,15 @@ private:
         }
 
         if (!current) {
+            beginMenuMode();
+
             current = items;
         } else if (current < items + nItems - 1) {
             current++;
         } else {
             current = nullptr;
-            output.clear();
+
+            endMenuMode();
 
             if (m_onUpdate)
                 m_onUpdate();
@@ -159,7 +177,7 @@ private:
     }
 
     void fillValueBuffer() {
-        memset(valueBuffer, ' ', lcdColumns);
+        memset(valueBuffer, ' ', lcdT::cols);
         valueBuffer[sizeof(valueBuffer) - 1] = 0;
 
         auto digits = round(ceil(log10(*current->value)));
@@ -167,7 +185,7 @@ private:
         if (digits < 0)
             digits = 0;
 
-        int8_t prec = maxDigits - 1 - digits;
+        int8_t prec = maxDigits - digits;
 
         if (prec < 0)
             prec = 0;
@@ -188,6 +206,7 @@ private:
 
     void updateDisplayedValue() {
         output << lcdut::pos(0, 1) << valueBuffer;
+        output.flush();
         output.setCursor(position, 1);
     }
 
@@ -207,7 +226,7 @@ private:
     }
 
 public:
-    Menu(LiquidCrystal_I2C& lcd, Item items[nItems]):
+    Menu(lcdT& lcd, Item items[nItems]):
         output(lcd),
         items(items),
         current(nullptr),
@@ -230,8 +249,6 @@ public:
     }
 
     void update() {
-        output.cursor_on();
-        // output.blink_on();
         do {
             setButton.process(millis());
             leftButton.process(millis());
@@ -242,8 +259,6 @@ public:
                 delay(50);
             }
         } while(current);
-        // output.blink_off();
-        output.cursor_off();
     }
 
     void onParamUpdate(updateCb cb) {
