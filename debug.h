@@ -3,6 +3,8 @@
 
 #define DEBUG_PRINTS false
 
+#define nameof(x) #x
+
 #define DBG_HEADER() __func__ << ": "
 
 #if DEBUG_PRINTS

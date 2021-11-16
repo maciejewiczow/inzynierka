@@ -4,49 +4,60 @@
 #include <LiquidCrystal_I2C.h>
 #include <InputDebounce.h>
 #include <print_util.h>
+#include "debug.h"
+#include "limits.h"
 #include "lcd_util.h"
 #include "BufferedLcd.h"
 
 using namespace lcdut;
 using namespace prnt;
 
-bool operator==(const InputDebounce& a, const InputDebounce& b) {
-    return a.getPinIn() == b.getPinIn();
+namespace  {
+    bool operator==(const InputDebounce& a, const InputDebounce& b) {
+        return a.getPinIn() == b.getPinIn();
+    }
+
+    template<typename T>
+    void arrayRotateRight(T* arr, size_t n) {
+        T tmp = arr[n - 1];
+
+        for (int i = n - 1; i > 0; i--)
+            arr[i] = arr[i-1];
+
+        arr[0] = tmp;
+    }
+
+    template<typename T>
+    void swap(T& a, T& b) {
+        T tmp = a;
+        a = b;
+        b = tmp;
+    }
 }
 
-template<typename T>
-void arrayRotateRight(T* arr, size_t n) {
-    T tmp = arr[n - 1];
+enum class MenuItemType : char {
+    _uint, _float
+};
 
-    for (int i = n - 1; i > 0; i--)
-        arr[i] = arr[i-1];
+struct MenuItem {
+    const char* name;
+    void* value;
+    MenuItemType type;
+};
 
-    arr[0] = tmp;
-}
-
-template<typename T>
-void swap(T& a, T& b) {
-    T tmp = a;
-    a = b;
-    b = tmp;
-}
-
-// constexpr size_t nItems = 5;
+// constexpr size_t nItems = 6;
+// constexpr uint8_t nLcdCols = 16;
+// constexpr uint8_t nLcdRows = 2;
 
 template<size_t nItems, uint8_t nLcdCols, uint8_t nLcdRows>
 class Menu {
 public:
-    struct Item {
-        const char* name;
-        float* value;
-    };
-
     using updateCb = void (*)();
     using lcdT = BufferedLcd<nLcdCols, nLcdRows>;
 
 private:
-    Item* items;
-    Item* current;
+    MenuItem* items;
+    MenuItem* current;
     uint8_t position;
     lcdT& output;
     updateCb m_onUpdate = nullptr;
@@ -54,7 +65,10 @@ private:
     char savedScreenBuffer[lcdT::size];
     char valueBuffer[lcdT::cols + 1];
 
-    static constexpr int8_t maxDigits = 7;
+    static constexpr int8_t maxFloatDigits = 7;
+    static constexpr int8_t maxUintDigits = 5;
+
+    int8_t maxDigits = maxFloatDigits;
 
     struct MenuInputDebounce : public InputDebounce {
         Menu& menu;
@@ -108,10 +122,26 @@ private:
         position = 0;
 
         if (current) {
-            *current->value = atof(valueBuffer);
+            DBG_Serial(current->name << " set to ");
+            switch (current->type) {
+                case MenuItemType::_float:
+                    *static_cast<float*>(current->value) = atof(valueBuffer);
+                    #if DEBUG_PRINTS
+                    Serial.println(*static_cast<float*>(current->value), 8);
+                    #endif
+                    break;
 
-            // Serial << current->name << " set to ";
-            // Serial.println(*current->value, 8);
+                case MenuItemType::_uint: {
+                    auto val = strtoul(valueBuffer, nullptr, 10);
+
+                    if (val > UINT_MAX)
+                        val = UINT_MAX;
+
+                    *static_cast<unsigned int*>(current->value) = (unsigned int)val;
+                    DBG_Serial(val << endl);
+                    break;
+                }
+            }
         }
 
         if (!current) {
@@ -180,28 +210,30 @@ private:
         memset(valueBuffer, ' ', lcdT::cols);
         valueBuffer[sizeof(valueBuffer) - 1] = 0;
 
-        auto digits = round(ceil(log10(*current->value)));
+        switch (current->type) {
+            case MenuItemType::_float: {
+                maxDigits = maxFloatDigits;
+                auto value = *static_cast<float*>(current->value);
+                auto digits = round(ceil(log10(value)));
 
-        if (digits < 0)
-            digits = 0;
+                if (digits < 0)
+                    digits = 0;
 
-        int8_t prec = maxDigits - digits;
+                int8_t prec = maxFloatDigits - digits;
 
-        if (prec < 0)
-            prec = 0;
+                if (prec < 0)
+                    prec = 0;
 
-        dtostrf(*current->value, maxDigits, prec, valueBuffer);
+                dtostrf(value, maxFloatDigits, prec, valueBuffer);
+                break;
+            }
 
-        // for (auto c : valueBuffer) {
-        //     Serial << (int) c;
-
-        //     if (isPrintable(c))
-        //         Serial << " ('" << c << "')";
-
-        //     Serial << ' ';
-        // }
-
-        // Serial << endl;
+            case MenuItemType::_uint: {
+                maxDigits = maxUintDigits - 1;
+                snprintf(valueBuffer, lcdT::cols, "%05u", *static_cast<unsigned int*>(current->value));
+                break;
+            }
+        }
     }
 
     void updateDisplayedValue() {
@@ -226,7 +258,7 @@ private:
     }
 
 public:
-    Menu(lcdT& lcd, Item items[nItems]):
+    Menu(lcdT& lcd, MenuItem items[nItems]):
         output(lcd),
         items(items),
         current(nullptr),

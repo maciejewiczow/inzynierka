@@ -23,6 +23,8 @@
 
 #define LCD_I2C_ADDRESS 0x3F
 
+#define DEBUG_SERIAL_TEMP false
+
 using namespace lcdut;
 using namespace prnt;
 
@@ -31,25 +33,26 @@ namespace meshconfig {
     constexpr size_t nNodes = nElements + 1;
 } // namespace meshconfig
 
+constexpr float minParamValue = 0.000001f;
+
 struct Input {
     /*
-    Stałe parametry:
-        len - długość pieca [m] - zmienna kompilacji
-
     Dane wejściowe:
         v0 - prędkośc pierwszej szpuli [m/s] - wprowadzanie ręczne
         v1 - prędkość drugiej szpuli (>=v0) [m/s] - wprowadzanie ręczne
         r - promień wsadu [m] - wprowadzanie ręczne
+        len - długość pieca [m] - zmienna kompilacji
+        n - ilośc kroków czasowych do wykonania
 
         t_0 - temperatura początkowa wsadu [deg C] - wprowadzać ręcznie/z drugiego czujnika temp pokojowej
         t_furnance - temperatura w piecu [deg C] - z termopary
     */
-    float furnaceLength = 0.2; // [m]
-    float v0 = 0.005;          // [m/s]
-    float v1 = 0.005;          // [m/s]
-    float r = 0.002;           // [m]
-
-    float t0 = 20; // [deg C]
+    float furnaceLength = 0.002;    // [m]
+    float v0 = 0.005;               // [m/s]
+    float v1 = 0.005;               // [m/s]
+    float r = 0.002;                // [m]
+    float t0 = 20;                  // [deg C]
+    unsigned int nIters = 20;
 };
 
 Input input;
@@ -58,7 +61,6 @@ Config config;
 namespace simulation {
     float tauEnd;
     float dTau;
-    int nIters;
 } // namespace simulation
 
 BufferedLcd<16, 2> lcd{LCD_I2C_ADDRESS};
@@ -66,6 +68,7 @@ BufferedLcd<16, 2> lcd{LCD_I2C_ADDRESS};
 Mesh<meshconfig::nNodes> mesh;
 
 float getTemp() {
+    #if DEBUG_SERIAL_TEMP
     if (Serial.available() < sizeof(float))
         return NAN;
 
@@ -73,6 +76,9 @@ float getTemp() {
     Serial.readBytes((byte*) &res, sizeof(float));
 
     return res;
+    #else
+    return 200;
+    #endif
 }
 
 IterationDataPacket<meshconfig::nNodes> iterData{mesh.nodes};
@@ -88,14 +94,14 @@ void calculateSimulationParams() {
 
     tauEnd = input.furnaceLength / v;
 
-    float a = config.K / (config.C * config.Ro);
+    // float a = config.K / (config.C * config.Ro);
     float elemSize = input.r / meshconfig::nElements;
 
-    dTau = (elemSize * elemSize) / (0.5 * a);
-    nIters = (tauEnd / dTau) + 1;
-    dTau = tauEnd / nIters;
+    // dTau = (elemSize * elemSize) / (0.5 * a);
+    // nIters = (tauEnd / dTau) + 1;
+    dTau = tauEnd / input.nIters;
 
-    iterData.nIterations = nIters;
+    iterData.nIterations = input.nIters;
     iterData.iteration = 0;
     iterData.tau = 0.f;
 
@@ -107,15 +113,20 @@ void updateEEPROM() {
     EEPROM.put(EEPROM_INPUT_PARAMS_ADDR + 1, input);
 }
 
-Menu<5, lcd.cols, lcd.rows>::Item menuItems[] = {
-    { "t0 [C]",              &input.t0              },
-    { "Promien wsadu[m]",    &input.r               },
-    { "v0 [m/s]",            &input.v0              },
-    { "v1 [m/s]",            &input.v1              },
-    { "Dlg. pieca [m]",      &input.furnaceLength   },
+constexpr size_t nMenuItems = 6;
+// using MyMenu = Menu;
+using MyMenu = Menu<nMenuItems, lcd.cols, lcd.rows>;
+
+MenuItem menuItems[] = {
+    { "t0 [C]",             &input.t0,             MenuItemType::_float },
+    { "Promien wsadu[m]",   &input.r,              MenuItemType::_float },
+    { "v0 [m/s]",           &input.v0,             MenuItemType::_float },
+    { "v1 [m/s]",           &input.v1,             MenuItemType::_float },
+    { "Dlg. pieca [m]",     &input.furnaceLength,  MenuItemType::_float },
+    { "N krokow czas.",     &input.nIters,         MenuItemType::_uint  },
 };
 
-Menu<5, lcd.cols, lcd.rows> menu{lcd, menuItems};
+MyMenu menu{lcd, menuItems};
 
 void setup() {
     Serial.begin(SERIAL_BAUD);
@@ -123,7 +134,6 @@ void setup() {
     lcd.backlight();
     watchdogTimer.setDelay(8000);
 
-    // lcd << pos(0, 1) << sizeof(unsigned long);
     while (!Serial)
         ;
 
@@ -134,13 +144,43 @@ void setup() {
         EEPROM.get(EEPROM_INPUT_PARAMS_ADDR + 1, input);
 
     calculateSimulationParams();
-    // Serial << "Params: " << endl
-    //     << "tauEnd = " << simulation::tauEnd << endl
-    //     << "dTau = " << simulation::dTau << endl
-    //     << "nIters = " << simulation::nIters << endl << endl;
+    DBG_Serial(
+        "Params: " << endl
+        << "tauEnd = " << simulation::tauEnd << endl
+        << "dTau = " << simulation::dTau << endl
+    );
 
     menu.setup(SET_BUTTON_PIN, LEFT_BUTTON_PIN, RIGHT_BUTTON_PIN, INCREMENT_BUTTON_PIN);
     menu.onParamUpdate([](){
+        if (input.r == 0.f)
+            input.r = minParamValue;
+
+        if (input.v0 == 0.f)
+            input.v0 = minParamValue;
+
+        if (input.v1 == 0.f)
+            input.v1 = minParamValue;
+
+        if (input.furnaceLength == 0.f)
+            input.furnaceLength = minParamValue;
+
+        if (input.nIters == 0)
+            input.nIters = 1;
+
+        if (input.r < 0.f)
+            input.r *= -1;
+
+        if (input.v0 < 0.f)
+            input.v0 *= -1;
+
+        if (input.v1 < 0.f)
+            input.v1 *= -1;
+
+        if (input.furnaceLength < 0.f)
+            input.furnaceLength *= -1;
+
+        Serial << nameof(input.nIters) << " = " << input.nIters << endl;
+
         calculateSimulationParams();
         updateEEPROM();
     });
@@ -157,13 +197,13 @@ void loop() {
         return;
     }
 
-    iterData.send();
+    // iterData.send();
 
-    benchmark.start().send();
+    // benchmark.start().send();
     mesh.integrateStep(simulation::dTau, input.r, temp, config);
-    benchmark.end().send().clear();
+    // benchmark.end().send().clear();
 
-    if (iterData.iteration < simulation::nIters) {
+    if (iterData.iteration < input.nIters) {
         iterData.iteration++;
         iterData.tau += simulation::dTau;
     }
