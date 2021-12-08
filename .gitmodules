@@ -4,3 +4,6 @@
 [submodule "lib/InputDebounce"]
 	path = lib/InputDebounce
 	url = https://github.com/Mokolea/InputDebounce.git
+[submodule "lib/Adafruit-MAX31855"]
+	path = lib/Adafruit-MAX31855
+	url = https://github.com/adafruit/Adafruit-MAX31855-library
