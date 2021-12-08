@@ -67,7 +67,7 @@ if args.outputFile:
         os.makedirs(path.dirname(args.outputFile))
 
     file = open(args.outputFile, 'x', newline='')
-    csv = csvModule.DictWriter(file, fieldnames=['cycle', 'iteration', 'arduinoDurationMicros', 'pcDuration'])
+    csv = csvModule.DictWriter(file, fieldnames=['cycle', 'iteration', 'arduinoDurationMicros', 'pcDuration', 'tempAmb', 'tempIn', 'tempOut'])
     csv.writeheader()
 
 def updatePlotLines(ax: Axes, lines: List[Line2D], data: np.array) -> None:
@@ -108,7 +108,10 @@ try:
                     'cycle': i,
                     'iteration': iterPacket.iteration,
                     'arduinoDurationMicros': benchmarkPacket.arduinoTimeElapsedMicros,
-                    'pcDuration': totalMicrosecons(elapsed)
+                    'pcDuration': totalMicrosecons(elapsed),
+                    'tempAmb': t,
+                    'tempIn': iterPacket.nodes[0].t,
+                    'tempOut': iterPacket.nodes[-1].t
                 })
 
             while iterPacket.iteration < iterPacket.nIterations:
@@ -134,7 +137,10 @@ try:
                         'cycle': i,
                         'iteration': iterPacket.iteration,
                         'arduinoDurationMicros': benchmarkPacket.arduinoTimeElapsedMicros,
-                        'pcDuration': totalMicrosecons(elapsed)
+                        'pcDuration': totalMicrosecons(elapsed),
+                        'tempAmb': t,
+                        'tempIn': iterPacket.nodes[0].t,
+                        'tempOut': iterPacket.nodes[-1].t
                     })
 
                 figure.canvas.flush_events()

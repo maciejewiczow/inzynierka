@@ -4,7 +4,7 @@
 #include <BasicLinearAlgebra.h>
 #include <KeepMeAlive.h>
 #include "Tridiagonal.h"
-#include "Config.h"
+#include "material.h"
 #include "IntegrationPoints.h"
 #include "print_util.h"
 
@@ -44,7 +44,7 @@ public:
         // Serial << endl;
     }
 
-    void integrateStep(float dTau, float r, float tAmbient, const Config& config) {
+    void integrateStep(float dTau, float r, float tAmbient, const Material& config) {
         MatTridiag<nNodes> H;
         BLA::Matrix<nNodes> P;
 

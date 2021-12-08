@@ -4,32 +4,20 @@
 #include <LiquidCrystal_I2C.h>
 #include <print_util.h>
 #include <EEPROM.h>
+
+#include "config.h"
 #include "lcd_util.h"
 #include "communication.h"
-#include "Config.h"
+#include "material.h"
 #include "Menu.h"
 #include "Mesh.h"
 #include "BufferedLcd.h"
-
-#define SERIAL_BAUD 57600
-
-#define SET_BUTTON_PIN 7
-#define LEFT_BUTTON_PIN 8
-#define RIGHT_BUTTON_PIN 9
-#define INCREMENT_BUTTON_PIN 10
-
-#define EEPROM_INPUT_PARAMS_ADDR 0
-#define EEPROM_READ_INDICATOR_VAL 69
-
-#define LCD_I2C_ADDRESS 0x3F
-
-#define DEBUG_SERIAL_TEMP false
 
 using namespace lcdut;
 using namespace prnt;
 
 namespace meshconfig {
-    constexpr size_t nElements = 5;
+    constexpr size_t nElements = GRID_SIZE;
     constexpr size_t nNodes = nElements + 1;
 } // namespace meshconfig
 
@@ -56,14 +44,14 @@ struct Input {
 };
 
 Input input;
-Config config;
+Material config;
 
 namespace simulation {
     float tauEnd;
     float dTau;
 } // namespace simulation
 
-BufferedLcd<16, 2> lcd{LCD_I2C_ADDRESS};
+BufferedLcd<16, 2> lcd{LCD_I2C_ADDR};
 
 Mesh<meshconfig::nNodes> mesh;
 
@@ -150,7 +138,13 @@ void setup() {
         << "dTau = " << simulation::dTau << endl
     );
 
-    menu.setup(SET_BUTTON_PIN, LEFT_BUTTON_PIN, RIGHT_BUTTON_PIN, INCREMENT_BUTTON_PIN);
+    menu.setup(
+        SET_BUTTON_PIN,
+        LEFT_BUTTON_PIN,
+        RIGHT_BUTTON_PIN,
+        INCREMENT_BUTTON_PIN,
+        DECREMENT_BUTTON_PIN
+    );
     menu.onParamUpdate([](){
         if (input.r == 0.f)
             input.r = minParamValue;
@@ -179,7 +173,10 @@ void setup() {
         if (input.furnaceLength < 0.f)
             input.furnaceLength *= -1;
 
-        Serial << nameof(input.nIters) << " = " << input.nIters << endl;
+        if (input.v0 > input.v1)
+            input.v1 = input.v0;
+
+        DBG_Serial(nameof(input.nIters) << " = " << input.nIters << endl);
 
         calculateSimulationParams();
         updateEEPROM();
@@ -197,11 +194,11 @@ void loop() {
         return;
     }
 
-    // iterData.send();
+    iterData.send();
 
-    // benchmark.start().send();
+    benchmark.start().send();
     mesh.integrateStep(simulation::dTau, input.r, temp, config);
-    // benchmark.end().send().clear();
+    benchmark.end().send().clear();
 
     if (iterData.iteration < input.nIters) {
         iterData.iteration++;

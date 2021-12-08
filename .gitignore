@@ -628,4 +628,5 @@ FodyWeavers.xsd
 
 .vscode/arduino.json
 !lib
-pomiary/*.csv
+pomiary/**/*.csv
+pomiary/**/*.txt

@@ -12,7 +12,7 @@
 using namespace lcdut;
 using namespace prnt;
 
-namespace  {
+namespace {
     bool operator==(const InputDebounce& a, const InputDebounce& b) {
         return a.getPinIn() == b.getPinIn();
     }
@@ -25,6 +25,16 @@ namespace  {
             arr[i] = arr[i-1];
 
         arr[0] = tmp;
+    }
+
+    template<typename T>
+    void arrayRotateLeft(T* arr, size_t n) {
+        T tmp = arr[0];
+
+        for (int i = 0; i < n-1; i++)
+            arr[i] = arr[i+1];
+
+        arr[n - 1] = tmp;
     }
 
     template<typename T>
@@ -85,7 +95,7 @@ private:
         virtual void pressedDuration(unsigned long duration) {
             if (duration - lastDuration >= 200) {
                 lastDuration = duration;
-                menu.handleButtonPress(*this);
+                menu.handleButtonPress(*this, true);
             }
         }
     };
@@ -94,16 +104,23 @@ private:
     MenuInputDebounce leftButton;
     MenuInputDebounce rightButton;
     MenuInputDebounce incButton;
+    MenuInputDebounce decButton;
 
-    void handleButtonPress(MenuInputDebounce& input) {
-        if (input == setButton)
-            handleSetButtonPress();
+    void handleButtonPress(MenuInputDebounce& input, bool isRepeated = false) {
+        if (input == setButton) {
+            // do not go around after exiting menu mode
+            // when set button is continiously pressed
+            if ((!isRepeated || current))
+                handleSetButtonPress();
+        }
         else if (input == leftButton)
             handleLeftButtonPress();
         else if (input == rightButton)
             handleRightButtonPress();
         else if (input == incButton)
             handleIncButtonPress();
+        else if (input == decButton)
+            handleDecButtonPress();
     }
 
     void beginMenuMode() {
@@ -114,6 +131,10 @@ private:
 
     void endMenuMode() {
         // output.blink_off();
+
+        if (m_onUpdate)
+            m_onUpdate();
+
         output.cursor_off();
         output.restoreContents(savedScreenBuffer);
     }
@@ -154,9 +175,6 @@ private:
             current = nullptr;
 
             endMenuMode();
-
-            if (m_onUpdate)
-                m_onUpdate();
         }
 
         if (current)
@@ -195,6 +213,27 @@ private:
                 valueBuffer[position] = '0';
             else
                 valueBuffer[position]++;
+        }
+
+        updateDisplayedValue();
+    }
+
+    void handleDecButtonPress() {
+        if (valueBuffer[position] == '.') {
+            if (isdigit(valueBuffer[position-1])) {
+                // swap the dot with prev digit
+                swap(valueBuffer[position], valueBuffer[position-1]);
+                decPosition();
+            } else {
+                // move all digits to the left and the dot to end
+                arrayRotateLeft(valueBuffer, maxFloatDigits+2);
+                setPosition(maxFloatDigits+1);
+            }
+        } else if (isdigit(valueBuffer[position])) {
+            if (valueBuffer[position] == '0')
+                valueBuffer[position] = '9';
+            else
+                valueBuffer[position]--;
         }
 
         updateDisplayedValue();
@@ -265,27 +304,33 @@ public:
         setButton(*this),
         leftButton(*this),
         rightButton(*this),
-        incButton(*this)
+        incButton(*this),
+        decButton(*this)
     {}
 
     void setup(
         uint8_t setButtonPin,
         uint8_t leftButtonPin,
         uint8_t rightButtonPin,
-        uint8_t incButtonPin
+        uint8_t incButtonPin,
+        uint8_t decButtonPin
     ) {
         setButton.setup(setButtonPin);
         leftButton.setup(leftButtonPin);
         rightButton.setup(rightButtonPin);
         incButton.setup(incButtonPin);
+        decButton.setup(decButtonPin);
     }
 
     void update() {
         do {
-            setButton.process(millis());
-            leftButton.process(millis());
-            rightButton.process(millis());
-            incButton.process(millis());
+            auto time = millis();
+
+            setButton.process(time);
+            leftButton.process(time);
+            rightButton.process(time);
+            incButton.process(time);
+            decButton.process(time);
 
             if (current) {
                 delay(50);
