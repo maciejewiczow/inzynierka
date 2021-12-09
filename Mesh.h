@@ -18,13 +18,6 @@ class Mesh {
 public:
     struct Node {
         float t, x;
-
-        using shapeFn = float (*)(float);
-
-        const static inline shapeFn N[] = {
-            [](float ksi) { return 0.5f*(1 - ksi); },
-            [](float ksi) { return 0.5f*(1 + ksi); }
-        };
     };
 
     Node nodes[nNodes];
@@ -66,15 +59,14 @@ public:
 
             float alphaAir = (i == nNodes-2) ? config.alphaAir : 0;
 
-
             for (int j = 0; j <= config.integrationScheme; j++) {
                 const auto& intPoint = IntegrationPoints::get(config.integrationScheme, j);
 
                 DBG_PRINT(intPoint.x);
                 DBG_PRINT(intPoint.weight);
 
-                float n0 = Node::N[0](intPoint.x);
-                float n1 = Node::N[1](intPoint.x);
+                float n0 = 0.5f * (1 - intPoint.x);
+                float n1 = 0.5f * (1 + intPoint.x);
 
                 DBG_PRINT(n0);
                 DBG_PRINT(n1);

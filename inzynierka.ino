@@ -4,6 +4,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <print_util.h>
 #include <EEPROM.h>
+#include <Adafruit_MAX31855.h>
 
 #include "config.h"
 #include "lcd_util.h"
@@ -52,6 +53,7 @@ namespace simulation {
 } // namespace simulation
 
 BufferedLcd<16, 2> lcd{LCD_I2C_ADDR};
+Adafruit_MAX31855 thermocouple{TEMP_CLK_PIN, TEMP_CS_PIN, TEMP_DO_PIN};
 
 Mesh<meshconfig::nNodes> mesh;
 
@@ -65,7 +67,20 @@ float getTemp() {
 
     return res;
     #else
-    return 200;
+    DBG_Serial("Internal Temp = " << thermocouple.readInternal() << endl);
+
+    float c = thermocouple.readCelsius();
+
+    #if DEBUG_PRINTS
+    if (isnan(c)) {
+        Serial.println("Something wrong with thermocouple!");
+        Serial << "error: " << thermocouple.readError() << endl;
+    } else {
+        Serial << "C = " << c << endl;
+    }
+    #endif
+
+    return c;
     #endif
 }
 
@@ -125,6 +140,9 @@ void setup() {
     while (!Serial)
         ;
 
+    if (!thermocouple.begin())
+        Serial << "Thermocouple init error" << endl;
+
     lcd << pos(3, 0) << (char) 0b10111100 << " Ready " << (char) 0b11000101;
     lcd.flush();
 
@@ -183,32 +201,53 @@ void setup() {
     });
 }
 
+bool isError = false;
+char stored[lcd.rows*lcd.cols];
+
 void loop() {
     static float temp = getTemp();
 
     menu.update();
 
     if (isnan(temp)) {
-        delay(50);
+        #if !DEBUG_SERIAL_TEMP
+        if (!isError) {
+            isError = true;
+            lcd.saveContents(stored);
+            lcd << pos(0,0) << "Thermocouple";
+            lcd << pos(0, 1) << "error nr " << thermocouple.readError();
+            lcd.flush();\
+        }
+        #endif
         temp = getTemp();
+        delay(50);
         return;
     }
 
+    if (isError) {
+        isError = false;
+        lcd.restoreContents(stored);
+    }
+
+
+    #if TELEMETRY
     iterData.send();
 
     benchmark.start().send();
+    #endif
     mesh.integrateStep(simulation::dTau, input.r, temp, config);
+    #if TELEMETRY
     benchmark.end().send().clear();
+    #endif
 
     if (iterData.iteration < input.nIters) {
         iterData.iteration++;
         iterData.tau += simulation::dTau;
     }
     else {
-        lcd << clear << pos(0, 0) << "Wew " << mesh.nodes[0].t << symbols::deg
-            << "C";
-        lcd << pos(0, 1) << "Zew " << mesh.nodes[meshconfig::nNodes - 1].t
-            << symbols::deg << "C";
+        lcd << clear << pos(0, 1) << mesh.nodes[0].t;
+        lcd << pos(8, 1) << mesh.nodes[meshconfig::nNodes - 1].t;
+        lcd << pos(0, 0) << temp;
 
         lcd.flush();
 

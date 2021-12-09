@@ -13,9 +13,13 @@
 #define EEPROM_READ_INDICATOR_VAL 69
 
 #define LCD_I2C_ADDR 0x3F
-#define TEMP_I2C_ADDR ?
+#define TEMP_DO_PIN 4
+#define TEMP_CS_PIN 3
+#define TEMP_CLK_PIN 2
 
-#define DEBUG_SERIAL_TEMP true
+
+#define DEBUG_SERIAL_TEMP false
+#define TELEMETRY false
 
 #define GRID_SIZE 11
 
