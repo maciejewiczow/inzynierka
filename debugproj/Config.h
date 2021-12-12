@@ -1,12 +1,26 @@
-#ifndef CONFIG_HEADER_GUARD
+﻿#ifndef CONFIG_HEADER_GUARD
 #define CONFIG_HEADER_GUARD
 
-struct Config {
-    unsigned integrationScheme = 1;
-    float alphaAir = 300;   // [W/(m^2*K)]
-    float C = 700.0;        // [J/(kg*K)]
-    float Ro = 7800.0;      // [kg/m^3]
-    float K = 25.0;         // [W/m*K]
-};
+#define SERIAL_BAUD 57600
+
+#define SET_BUTTON_PIN 7
+#define LEFT_BUTTON_PIN 8
+#define RIGHT_BUTTON_PIN 9
+#define INCREMENT_BUTTON_PIN 10
+#define DECREMENT_BUTTON_PIN 11
+
+#define EEPROM_INPUT_PARAMS_ADDR 0
+#define EEPROM_READ_INDICATOR_VAL 69
+
+#define LCD_I2C_ADDR 0x3F
+#define TEMP_DO_PIN 4
+#define TEMP_CS_PIN 3
+#define TEMP_CLK_PIN 2
+
+#define DEBUG_SERIAL_TEMP false
+#define TELEMETRY false
+
+// number of mesh elements
+#define MESH_SIZE 10
 
 #endif

@@ -147,11 +147,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BasicLinearAlgebra.h" />
+    <ClInclude Include="communication.h" />
     <ClInclude Include="Config.h" />
+    <ClInclude Include="debug.h" />
     <ClInclude Include="ElementStorage.h" />
     <ClInclude Include="impl\BasicLinearAlgebra.h" />
     <ClInclude Include="impl\NotSoBasicLinearAlgebra.h" />
     <ClInclude Include="IntegrationPoints.h" />
+    <ClInclude Include="material.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Tridiagonal.h" />
   </ItemGroup>

@@ -1,6 +1,5 @@
-﻿#pragma once
-
-#include <cstddef>
+﻿#ifndef INTEGRATION_POINTS_H
+#define INTEGRATION_POINTS_H
 
 class IntegrationPoints {
 public:
@@ -33,8 +32,11 @@ private:
         {  .906180,  .236927 },
     };
 
+
 public:
-    static const Point& get(std::size_t n, std::size_t i) {
-        return nodes[static_cast<std::size_t>(0.5*n*(n + 1) - 1) + i];
+    static inline const Point& get(size_t n, size_t i) {
+        return nodes[static_cast<size_t>(0.5*n*(n + 1) - 1) + i];
     }
 };
+
+#endif
