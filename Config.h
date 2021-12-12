@@ -17,10 +17,10 @@
 #define TEMP_CS_PIN 3
 #define TEMP_CLK_PIN 2
 
-
 #define DEBUG_SERIAL_TEMP false
 #define TELEMETRY false
 
-#define GRID_SIZE 11
+// number of mesh elements
+#define MESH_SIZE 15
 
 #endif

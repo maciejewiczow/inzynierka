@@ -89,7 +89,6 @@ public:
                 watchdogTimer.reset();
             }
 
-
             P.template Submatrix<2, 1>(i, 0) += Plocal;
             H.template Submatrix<2, 2>(i, i) += Hlocal;
         }

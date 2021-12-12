@@ -18,7 +18,7 @@ using namespace lcdut;
 using namespace prnt;
 
 namespace meshconfig {
-    constexpr size_t nElements = GRID_SIZE;
+    constexpr size_t nElements = MESH_SIZE;
     constexpr size_t nNodes = nElements + 1;
 } // namespace meshconfig
 
@@ -84,9 +84,6 @@ float getTemp() {
     #endif
 }
 
-IterationDataPacket<meshconfig::nNodes> iterData{mesh.nodes};
-BenchmarkDataPacket benchmark;
-
 void calculateSimulationParams() {
     using namespace simulation;
     // założenia:
@@ -131,6 +128,11 @@ MenuItem menuItems[] = {
 
 MyMenu menu{lcd, menuItems};
 
+bool isError = false;
+char stored[lcd.rows*lcd.cols];
+IterationDataPacket<meshconfig::nNodes> iterData{mesh.nodes};
+BenchmarkDataPacket benchmark;
+
 void setup() {
     Serial.begin(SERIAL_BAUD);
     lcd.init();
@@ -145,6 +147,7 @@ void setup() {
 
     lcd << pos(3, 0) << (char) 0b10111100 << " Ready " << (char) 0b11000101;
     lcd.flush();
+    lcd.saveContents(stored);
 
     if (EEPROM.read(EEPROM_INPUT_PARAMS_ADDR) == EEPROM_READ_INDICATOR_VAL)
         EEPROM.get(EEPROM_INPUT_PARAMS_ADDR + 1, input);
@@ -201,9 +204,6 @@ void setup() {
     });
 }
 
-bool isError = false;
-char stored[lcd.rows*lcd.cols];
-
 void loop() {
     static float temp = getTemp();
 
@@ -216,7 +216,7 @@ void loop() {
             lcd.saveContents(stored);
             lcd << pos(0,0) << "Thermocouple";
             lcd << pos(0, 1) << "error nr " << thermocouple.readError();
-            lcd.flush();\
+            lcd.flush();
         }
         #endif
         temp = getTemp();
@@ -228,7 +228,6 @@ void loop() {
         isError = false;
         lcd.restoreContents(stored);
     }
-
 
     #if TELEMETRY
     iterData.send();
