@@ -8,7 +8,7 @@ public:
     };
 
 private:
-    const static inline Point nodes[] = {
+    const static inline Point pts[] = {
         // n == 1
         { -.577350, 1.       },
         {  .577350, 1.       },
@@ -35,7 +35,7 @@ private:
 
 public:
     static inline const Point& get(size_t n, size_t i) {
-        return nodes[static_cast<size_t>(0.5*n*(n + 1) - 1) + i];
+        return pts[static_cast<size_t>(0.5*n*(n + 1) - 1) + i];
     }
 };
 

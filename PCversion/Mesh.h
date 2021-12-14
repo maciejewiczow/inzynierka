@@ -33,7 +33,7 @@ public:
     }
 
     void integrateStep(float dTau, float r, float tAmbient, const Material& config) {
-        MatTridiag<nNodes> H;
+        TridiagMat<nNodes> H;
         BLA::Matrix<nNodes> P;
 
         H.Fill(0);
