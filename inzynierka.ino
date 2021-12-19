@@ -41,7 +41,7 @@ struct Input {
     float v1 = 0.005;               // [m/s]
     float r = 0.002;                // [m]
     float t0 = 20;                  // [deg C]
-    unsigned int nIters = 20;
+    unsigned nSteps = 20;
 };
 
 Input input;
@@ -98,11 +98,11 @@ void calculateSimulationParams() {
     float elemSize = input.r / meshconfig::nElements;
 
     // dTau = (elemSize * elemSize) / (0.5 * a);
-    // nIters = (tauEnd / dTau) + 1;
-    dTau = tauEnd / input.nIters;
+    // nSteps = (tauEnd / dTau) + 1;
+    dTau = tauEnd / input.nSteps;
 
-    iterData.nIterations = input.nIters;
-    iterData.iteration = 0;
+    iterData.nSteps = input.nSteps;
+    iterData.step = 0;
     iterData.tau = 0.f;
 
     mesh.generate(input.t0, elemSize);
@@ -179,8 +179,8 @@ void setup() {
         if (input.furnaceLength == 0.f)
             input.furnaceLength = minParamValue;
 
-        if (input.nIters == 0)
-            input.nIters = 1;
+        if (input.nSteps == 0)
+            input.nSteps = 1;
 
         if (input.r < 0.f)
             input.r *= -1;
@@ -197,7 +197,7 @@ void setup() {
         if (input.v0 > input.v1)
             input.v1 = input.v0;
 
-        DBG_Serial(nameof(input.nIters) << " = " << input.nIters << endl);
+        DBG_Serial(nameof(input.nSteps) << " = " << input.nSteps << endl);
 
         calculateSimulationParams();
         updateEEPROM();
@@ -239,8 +239,8 @@ void loop() {
     benchmark.end().send().clear();
     #endif
 
-    if (iterData.iteration < input.nIters) {
-        iterData.iteration++;
+    if (iterData.step < input.nSteps) {
+        iterData.step++;
         iterData.tau += simulation::dTau;
     }
     else {
@@ -250,7 +250,7 @@ void loop() {
 
         lcd.flush();
 
-        iterData.iteration = 0;
+        iterData.step = 0;
         iterData.tau = 0.f;
 
         for (auto& node : mesh.nodes)

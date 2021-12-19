@@ -20,8 +20,8 @@ struct Packet {
 template<size_t nNodesT>
 struct IterationDataPacket : public Packet {
     float tau;
-    int iteration;
-    unsigned nIterations;
+    int step;
+    unsigned nSteps;
     const size_t nNodes = nNodesT;
     const size_t nodeSize = sizeof(typename Mesh<nNodesT>::Node);
     const typename Mesh<nNodesT>::Node* nodes;
