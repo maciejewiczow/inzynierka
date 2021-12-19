@@ -116,7 +116,7 @@ public:
         return 1;
     }
 
-    virtual size_t write(const uint8_t *buffer, size_t size) {
+    virtual size_t write(const uint8_t* buffer, size_t size) {
         DBG_Serial("Buffer write called" << endl);
         size_t n = 0;
 
