@@ -247,6 +247,10 @@ private:
     void updateDisplayedItem() {
         output << clear << pos(0, 0) << current->name;
         fillValueBuffer();
+
+        if (current->type == MenuItemType::_uint)
+            position = maxDigits;
+
         updateDisplayedValue();
     }
 
