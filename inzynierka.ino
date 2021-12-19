@@ -52,7 +52,7 @@ namespace simulation {
     float dTau;
 } // namespace simulation
 
-BufferedLcd<16, 2> lcd{LCD_I2C_ADDR};
+BufferedLcd<LCD_COLS, LCD_ROWS> lcd{LCD_I2C_ADDR};
 Adafruit_MAX31855 thermocouple{TEMP_CLK_PIN, TEMP_CS_PIN, TEMP_DO_PIN};
 
 Mesh<meshconfig::nNodes> mesh;
