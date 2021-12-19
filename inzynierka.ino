@@ -259,11 +259,14 @@ void loop() {
     if (iterData.step < input.nSteps) {
         iterData.step++;
         iterData.tau += simulation::dTau;
+        lcd << pos(8, 1) << "    ";
+        lcd << pos(8, 1) << (int) (100 * iterData.tau/simulation::tauEnd) << '%';
+        lcd.flush();
     }
     else {
-        lcd << clear << pos(0, 1) << mesh.nodes[0].t;
-        lcd << pos(8, 1) << mesh.nodes[meshconfig::nNodes - 1].t;
-        lcd << pos(0, 0) << temp;
+        lcd << clear << pos(0, 0) << mesh.nodes[0].t;
+        lcd << pos(8, 0) << mesh.nodes[meshconfig::nNodes - 1].t;
+        lcd << pos(0, 1) << temp;
 
         lcd.flush();
 
