@@ -94,7 +94,7 @@ void calculateSimulationParams() {
     //    - liniowe przyspieszenie między v0 i v1
     //    - piec jest po środku między szpulami
     //    - prędkość nie zmienia się znacząco na długości pieca
-    float v = 1.5 * input.v0 - 0.5 * input.v1;
+    float v = (input.v0 + input.v1)/2.f;
 
     tauEnd = input.furnaceLength / v;
 
