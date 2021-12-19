@@ -26,13 +26,13 @@
     ! 1800 TauMax s;
 
     implicit none;
-    real*8 :: Rmin.Rmax.AlfaAir.TempBegin,TempAir,TauMax;
+    real*8 :: Rmin,Rmax,AlfaAir,TempBegin,TempAir,TauMax;
     real*8 :: t1,t2,Tau1,Tau2;
     real*8 :: C,Ro,K;
     integer*4 :: nRead;
 
     nRead = 217;
-    OPEN (nRead,FILE * ‘DataInpTemp1d.txt’)
+    OPEN (nRead, FILE = 'DataInpTemp1d.txt')
 
     READ(nRead,*)
     READ(nRead,*) Rmin;
@@ -42,7 +42,7 @@
     READ(nRead,*) t1, t2;
     READ(nRead,*) C;
     READ(nRead,*) Ro;
-    READ(nRead.*) K;
+    READ(nRead,*) K;
     READ(nRead,*) Tau1, Tau2;
 
     CLOSE (nRead);

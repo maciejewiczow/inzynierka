@@ -14,5 +14,6 @@
                 }
             }
         ]
-    }
+    },
+    "fortran.ignoreWarning.fortls": true
 }
