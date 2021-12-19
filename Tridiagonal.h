@@ -34,6 +34,6 @@ public:
 };
 
 template<size_t dim, typename T = float>
-using MatTridiag = BLA::Matrix<dim, dim, Tridiagonal<dim, T>>;
+using TridiagMat = BLA::Matrix<dim, dim, Tridiagonal<dim, T>>;
 
 #endif

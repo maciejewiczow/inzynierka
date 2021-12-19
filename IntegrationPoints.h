@@ -4,11 +4,11 @@
 class IntegrationPoints {
 public:
     struct Point {
-        float x, weight;
+        float xi, weight;
     };
 
 private:
-    const static inline Point nodes[] PROGMEM = {
+    const static inline Point pts[] PROGMEM = {
         // n == 1
         { -.577350, 1.       },
         {  .577350, 1.       },
@@ -36,7 +36,7 @@ private:
 
 public:
     static inline const Point& get(size_t n, size_t i) {
-        memcpy_P(&current, &nodes[static_cast<size_t>(0.5*n*(n + 1) - 1) + i], sizeof(Point));
+        memcpy_P(&current, &pts[static_cast<size_t>(0.5*n*(n + 1) - 1) + i], sizeof(Point));
         return current;
     }
 };
