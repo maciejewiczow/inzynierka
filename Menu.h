@@ -80,10 +80,11 @@ private:
 
     int8_t maxDigits = maxFloatDigits;
 
-    struct MenuInputDebounce : public InputDebounce {
+    class MenuInputDebounce : public InputDebounce {
         Menu& menu;
         unsigned long lastDuration;
 
+    public:
         MenuInputDebounce(Menu& menu): menu(menu) {}
 
     protected:
@@ -113,7 +114,11 @@ private:
             if ((!isRepeated || current))
                 handleSetButtonPress();
         }
-        else if (input == leftButton)
+
+        if (!current)
+            return;
+
+        if (input == leftButton)
             handleLeftButtonPress();
         else if (input == rightButton)
             handleRightButtonPress();
