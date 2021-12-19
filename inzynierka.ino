@@ -9,7 +9,6 @@
 #include "config.h"
 #include "lcd_util.h"
 #include "communication.h"
-#include "material.h"
 #include "Menu.h"
 #include "Mesh.h"
 #include "BufferedLcd.h"
@@ -42,10 +41,14 @@ struct Input {
     float r = 0.002;                // [m]
     float t0 = 20;                  // [deg C]
     unsigned nSteps = 20;
+    unsigned integrationScheme = 1;
+    float alphaAir = 300;   // [W/(m^2*K)]
+    float C = 700.0;        // [J/(kg*K)]
+    float Ro = 7800.0;      // [kg/m^3]
+    float K = 25.0;         // [W/m*K]
 };
 
-Input input;
-Material config;
+Input input{};
 
 namespace simulation {
     float tauEnd;
@@ -54,8 +57,6 @@ namespace simulation {
 
 BufferedLcd<LCD_COLS, LCD_ROWS> lcd{LCD_I2C_ADDR};
 Adafruit_MAX31855 thermocouple{TEMP_CLK_PIN, TEMP_CS_PIN, TEMP_DO_PIN};
-
-Mesh<meshconfig::nNodes> mesh;
 
 float getTemp() {
     #if DEBUG_SERIAL_TEMP
@@ -83,6 +84,9 @@ float getTemp() {
     return c;
     #endif
 }
+
+Mesh<meshconfig::nNodes> mesh{};
+IterationDataPacket<meshconfig::nNodes> iterData{mesh.nodes};
 
 void calculateSimulationParams() {
     using namespace simulation;
@@ -113,24 +117,29 @@ void updateEEPROM() {
     EEPROM.put(EEPROM_INPUT_PARAMS_ADDR + 1, input);
 }
 
-constexpr size_t nMenuItems = 6;
-// using MyMenu = Menu;
-using MyMenu = Menu<nMenuItems, lcd.cols, lcd.rows>;
+#define ARRAYSIZE(a) (sizeof(a) / sizeof(*(a)))
 
 MenuItem menuItems[] = {
-    { "t0 [C]",             &input.t0,             MenuItemType::_float },
-    { "Promien wsadu[m]",   &input.r,              MenuItemType::_float },
-    { "v0 [m/s]",           &input.v0,             MenuItemType::_float },
-    { "v1 [m/s]",           &input.v1,             MenuItemType::_float },
-    { "Dlg. pieca [m]",     &input.furnaceLength,  MenuItemType::_float },
-    { "N krokow czas.",     &input.nIters,         MenuItemType::_uint  },
+    // max lcd.cols chars!
+    { "N krokow czas.",     &input.nSteps,            MenuItemType::_uint  },
+    { "t0 [C]",             &input.t0,                MenuItemType::_float },
+    { "Promien wsadu[m]",   &input.r,                 MenuItemType::_float },
+    { "v0 [m/s]",           &input.v0,                MenuItemType::_float },
+    { "v1 [m/s]",           &input.v1,                MenuItemType::_float },
+    { "Sch. calk. 1-4",     &input.integrationScheme, MenuItemType::_uint  },
+    { "\xE0 air [W/m^2*K]", &input.alphaAir,          MenuItemType::_float },
+    { "Cp. wl. [J/kgK]",    &input.C,                 MenuItemType::_float },
+    { "\xE6 [kg/m3]",       &input.Ro,                MenuItemType::_float },
+    { "K [W/m*K]",          &input.K,                 MenuItemType::_float },
+    { "Dlg. pieca [m]",     &input.furnaceLength,     MenuItemType::_float },
 };
 
+// using MyMenu = Menu;
+using MyMenu = Menu<ARRAYSIZE(menuItems), lcd.cols, lcd.rows>;
 MyMenu menu{lcd, menuItems};
 
 bool isError = false;
 char stored[lcd.rows*lcd.cols];
-IterationDataPacket<meshconfig::nNodes> iterData{mesh.nodes};
 BenchmarkDataPacket benchmark;
 
 void setup() {
@@ -181,6 +190,12 @@ void setup() {
 
         if (input.nSteps == 0)
             input.nSteps = 1;
+
+        if (input.integrationScheme < 1)
+            input.integrationScheme = 1;
+
+        if (input.integrationScheme > 4)
+            input.integrationScheme = 4;
 
         if (input.r < 0.f)
             input.r *= -1;
@@ -234,7 +249,9 @@ void loop() {
 
     benchmark.start().send();
     #endif
-    mesh.integrateStep(simulation::dTau, input.r, temp, config);
+
+    mesh.integrateStep(simulation::dTau, input.r, temp, input);
+
     #if TELEMETRY
     benchmark.end().send().clear();
     #endif

@@ -4,7 +4,6 @@
 #include <BasicLinearAlgebra.h>
 #include <KeepMeAlive.h>
 #include "Tridiagonal.h"
-#include "material.h"
 #include "IntegrationPoints.h"
 #include "print_util.h"
 
@@ -13,11 +12,13 @@ using namespace prnt;
 // #define DBG_PRINT(x) Serial << #x " = " << x << endl
 #define DBG_PRINT(x)
 
+class Input;
+
 template<int nNodes>
 class Mesh {
 public:
     struct Node {
-        float t, x;
+        float t, r;
     };
 
     Node nodes[nNodes];
@@ -32,7 +33,7 @@ public:
         }
     }
 
-    void integrateStep(float dTau, float r, float tAmbient, const Material& input) {
+    void integrateStep(float dTau, float r, float tAmbient, const Input& input) {
         TridiagMat<nNodes> H;
         BLA::Matrix<nNodes> P;
 
