@@ -12,7 +12,7 @@ template<int nNodes>
 class Mesh {
 public:
     struct Node {
-        float t, x;
+        float t, r;
     };
 
     Node nodes[nNodes];
@@ -20,14 +20,14 @@ public:
     void generate(float t0, float elemSize) {
         // Serial << "Generating the mesh" << endl;
 
-        float x = 0;
+        float r = 0;
         for (int i = 0; i < nNodes; i++) {
             nodes[i].t = t0;
-            nodes[i].x = x;
+            nodes[i].r = r;
 
-            // Serial << "Node " << i << ": " << "x = " << x << ", t = " << t0 << endl;
+            // Serial << "Node " << i << ": " << "r = " << r << ", t = " << t0 << endl;
 
-            x += elemSize;
+            r += elemSize;
         }
         // Serial << endl;
     }
@@ -48,36 +48,36 @@ public:
             auto& node1 = nodes[i];
             auto& node2 = nodes[i+1];
 
-            float dR = fabs(node1.x - node2.x);
+            float dR = fabs(node1.r - node2.r);
 
             DBG_PRINT(dR);
 
             float alphaAir = (i == nNodes-2) ? config.alphaAir : 0;
 
-            for (int j = 0; j <= config.integrationScheme; j++) {
+            for (unsigned j = 0; j <= config.integrationScheme; j++) {
                 const auto& intPoint = IntegrationPoints::get(config.integrationScheme, j);
 
-                DBG_PRINT(intPoint.x);
+                DBG_PRINT(intPoint.xi);
                 DBG_PRINT(intPoint.weight);
 
-                float n0 = 0.5f * (1 - intPoint.x);
-                float n1 = 0.5f * (1 + intPoint.x);
+                float n0 = 0.5f * (1 - intPoint.xi);
+                float n1 = 0.5f * (1 + intPoint.xi);
 
                 DBG_PRINT(n0);
                 DBG_PRINT(n1);
 
-                float x = node1.x * n0 + node2.x * n1;
+                float r = node1.r * n0 + node2.r * n1;
                 float t = node1.t * n0 + node2.t * n1;
 
-                DBG_PRINT(x);
+                DBG_PRINT(r);
                 DBG_PRINT(t);
 
-                auto tmp = config.C * config.Ro * dR * x * intPoint.weight;
+                auto tmp = config.C * config.Ro * dR * r * intPoint.weight;
 
-                Hlocal(0,0) += config.K*x*intPoint.weight/dR + tmp*n0*n0/dTau;
-                Hlocal(0,1) += -config.K*x*intPoint.weight/dR + tmp*n0*n1/dTau;
+                Hlocal(0,0) += config.K*r*intPoint.weight/dR + tmp*n0*n0/dTau;
+                Hlocal(0,1) += -config.K*r*intPoint.weight/dR + tmp*n0*n1/dTau;
                 Hlocal(1,0) = Hlocal(0,1);
-                Hlocal(1,1) += config.K*x*intPoint.weight/dR + tmp*n1*n1/dTau + 2.f*alphaAir*r;
+                Hlocal(1,1) += config.K*r*intPoint.weight/dR + tmp*n1*n1/dTau + 2.f*alphaAir*r;
 
                 Plocal(0) += tmp*t*n0/dTau;
                 Plocal(1) += tmp*t*n1/dTau + 2.f*alphaAir*r*tAmbient;

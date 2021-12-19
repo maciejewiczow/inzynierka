@@ -4,7 +4,7 @@
 class IntegrationPoints {
 public:
     struct Point {
-        float x, weight;
+        float xi, weight;
     };
 
 private:

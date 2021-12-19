@@ -21,6 +21,6 @@
 #define TELEMETRY false
 
 // number of mesh elements
-#define MESH_SIZE 10
+#define MESH_SIZE 15
 
 #endif

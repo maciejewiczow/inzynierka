@@ -13,7 +13,7 @@ namespace fs = std::filesystem;
 namespace chron = std::chrono;
 
 namespace meshconfig {
-    constexpr size_t nElements = MESH_SIZE;
+    constexpr size_t nElements = 5;
     constexpr size_t nNodes = nElements + 1;
 } // namespace meshconfig
 
@@ -30,11 +30,11 @@ struct Input {
     t_furnance - temperatura w piecu [deg C] - z termopary
     */
     float furnaceLength = 0.02;    // [m]
-    float v0 = 0.002;               // [m/s]
-    float v1 = 0.0025;               // [m/s]
-    float r = 0.002;                // [m]
+    float v0 = 0.005;               // [m/s]
+    float v1 = 0.0055;               // [m/s]
+    float r = 0.005;                // [m]
     float t0 = 20;                  // [deg C]
-    unsigned int nIters = 0;
+    unsigned int nSteps = 0;
 };
 
 Input input;
@@ -53,7 +53,7 @@ float getTemp(float x, float tStart, float tEnd, float tauStart, float tauEnd) {
 
     if (x > tauEnd)
         return tEnd;
-    
+
     return (tStart - tEnd)/(log(tauStart) - log(tauEnd))*log(x*exp((tEnd*log(tauStart) - tStart*log(tauEnd))/(tStart - tEnd)));
 }
 
@@ -65,7 +65,7 @@ void calculateSimulationParams() {
     //    - liniowe przyspieszenie między v0 i v1
     //    - piec jest po środku między szpulami
     //    - prędkość nie zmienia się znacząco na długości pieca
-    float v = 1.5 * input.v0 - 0.5 * input.v1;
+    float v = (input.v0 + input.v1)/2.f;
 
     tauEnd = input.furnaceLength / v;
 
@@ -73,11 +73,11 @@ void calculateSimulationParams() {
     float elemSize = input.r / meshconfig::nElements;
 
     // dTau = (elemSize * elemSize) / (0.5 * a);
-    // nIters = (tauEnd / dTau) + 1;
-    dTau = tauEnd / input.nIters;
+    // nSteps = (tauEnd / dTau) + 1;
+    dTau = tauEnd / input.nSteps;
 
-    iterData.nIterations = input.nIters;
-    iterData.iteration = 0;
+    iterData.nSteps = input.nSteps;
+    iterData.step = 0;
     iterData.tau = 0.f;
 
     mesh.generate(input.t0, elemSize);
@@ -89,14 +89,15 @@ int main(int argc, char* argv[]) {
 
     float tauStart = 0.0001;
     float tauEnd = 10;
+    float tEnd = 800.f;
     float tau = tauStart;
     float dTau = 0.5;
 
     for (int i = 2; i < argc; i++) {
         char filename[400] = { 0 };
 
-        input.nIters = atoi(argv[i]);
-        snprintf(filename, 400, argv[1], input.nIters);
+        input.nSteps = atoi(argv[i]);
+        snprintf(filename, 400, argv[1], input.nSteps);
         calculateSimulationParams();
 
         fs::path path{filename};
@@ -110,26 +111,26 @@ int main(int argc, char* argv[]) {
 
         tau = tauStart;
         for (int j = 1; tau < tauEnd; tau += dTau, j++) {
-            float temp = getTemp(tau, 0, 1700, tauStart, tauEnd);
+            float temp = getTemp(tau, 20, tEnd, tauStart, tauEnd);
 
-            while (iterData.iteration < input.nIters) {
+            while (iterData.step < input.nSteps) {
                 auto start = chron::high_resolution_clock::now();
                 mesh.integrateStep(simulation::dTau, input.r, temp, config);
 
                 auto duration = chron::duration_cast<chron::microseconds>(chron::high_resolution_clock::now() - start).count();
                 out << j << ','
-                    << iterData.iteration << ','
+                    << iterData.step << ','
                     << duration << ','
                     << duration << ','
                     << temp << ','
                     << mesh.nodes[0].t << ','
                     << mesh.nodes[meshconfig::nNodes - 1].t << '\n';
 
-                iterData.iteration++;
+                iterData.step++;
                 iterData.tau += simulation::dTau;
             }
 
-            iterData.iteration = 0;
+            iterData.step = 0;
             iterData.tau = 0.f;
 
             for (auto& node : mesh.nodes)
