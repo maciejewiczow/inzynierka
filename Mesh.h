@@ -9,9 +9,6 @@
 
 using namespace prnt;
 
-// #define DBG_PRINT(x) Serial << #x " = " << x << endl
-#define DBG_PRINT(x)
-
 class Input;
 
 template<int nNodes>
@@ -33,7 +30,7 @@ public:
         }
     }
 
-    void integrateStep(float dTau, float r, float tAmbient, const Input& input) {
+    void integrateStep(float dTau, float rMax, float tAmbient, const Input& input) {
         TridiagMat<nNodes> H;
         BLA::Matrix<nNodes> P;
 
@@ -59,18 +56,18 @@ public:
                 float n0 = 0.5f * (1 - intPoint.xi);
                 float n1 = 0.5f * (1 + intPoint.xi);
 
-                float x = nodeI.r * n0 + nodeJ.r * n1;
+                float r = nodeI.r * n0 + nodeJ.r * n1;
                 float t = nodeI.t * n0 + nodeJ.t * n1;
 
-                auto tmp = input.C * input.Ro * dR * x * intPoint.weight;
+                auto tmp = input.C * input.Ro * dR * r * intPoint.weight;
 
-                Hlocal(0,0) += input.K*x*intPoint.weight/dR + tmp*n0*n0/dTau;
-                Hlocal(0,1) += -input.K*x*intPoint.weight/dR + tmp*n0*n1/dTau;
+                Hlocal(0,0) += input.K*r*intPoint.weight/dR + tmp*n0*n0/dTau;
+                Hlocal(0,1) += -input.K*r*intPoint.weight/dR + tmp*n0*n1/dTau;
                 Hlocal(1,0) = Hlocal(0,1);
-                Hlocal(1,1) += input.K*x*intPoint.weight/dR + tmp*n1*n1/dTau + 2.f*alphaAir*r;
+                Hlocal(1,1) += input.K*r*intPoint.weight/dR + tmp*n1*n1/dTau + 2.f*alphaAir*rMax;
 
                 Plocal(0) += tmp*t*n0/dTau;
-                Plocal(1) += tmp*t*n1/dTau + 2.f*alphaAir*r*tAmbient;
+                Plocal(1) += tmp*t*n1/dTau + 2.f*alphaAir*rMax*tAmbient;
                 watchdogTimer.reset();
             }
 
@@ -79,11 +76,11 @@ public:
         }
 
         auto decomposition = BLA::LUDecompose(H);
-        auto x = BLA::LUSolve(decomposition, P);
+        auto t = BLA::LUSolve(decomposition, P);
         watchdogTimer.reset();
 
         for (int i = 0; i < nNodes; i++)
-            nodes[i].t = x(i);
+            nodes[i].t = t(i);
     }
 };
 
