@@ -22,7 +22,7 @@ parser.add_argument('--dTau', type=float, default=0.5)
 parser.add_argument("--tStart", type=float, default=20)
 parser.add_argument("--tEnd", type=float, default=1700)
 parser.add_argument('-o', '--outputFile', type=str)
-parser.add_argument('-m', '--manual', dest="manualInput", type=bool, default=False)
+parser.add_argument('-m', '--manual', dest="manualInput", action='store_true', default=False)
 
 args = parser.parse_args()
 
@@ -30,8 +30,14 @@ temp = heatingCurve(args.tauStart, args.tStart, args.tauEnd, args.tEnd)
 
 firstInterrupt = True
 
-plt.ion()
+_, port = getAndUpdateArduinoPort('./.vscode/arduino.json')
 
+serial = Serial(port=port.port, baudrate=57600, timeout=7000)
+time.sleep(8)
+serial.write(0)
+time.sleep(5)
+
+plt.ion()
 figure, (oneCycleAx, allCyclesAx) = plt.subplots(nrows=2, ncols=1, figsize=(10, 8))
 
 figure.canvas.mpl_connect('close_event', lambda e: exit())
@@ -53,13 +59,6 @@ oneCycleAx.legend(oneCycleLines, ['Temp wewnętrzna', 'Temp zewnętrzna'])
 allCyclesLines = allCyclesAx.plot(allCyclesData[:,0], allCyclesData[:,1:])
 allCyclesAx.legend(allCyclesLines, ['Temp pieca', 'Końcowa temp wewn', 'Końcowa temp zewn'])
 
-_, port = getAndUpdateArduinoPort('./.vscode/arduino.json')
-
-serial = Serial(port=port.port, baudrate=57600, timeout=7000)
-time.sleep(8)
-serial.write(0)
-time.sleep(5)
-
 csv: Optional[csvModule.DictWriter] = None
 
 if args.outputFile:
@@ -67,7 +66,7 @@ if args.outputFile:
         os.makedirs(path.dirname(args.outputFile))
 
     file = open(args.outputFile, 'x', newline='')
-    csv = csvModule.DictWriter(file, fieldnames=['cycle', 'iteration', 'arduinoDurationMicros', 'pcDuration', 'tempAmb', 'tempIn', 'tempOut'])
+    csv = csvModule.DictWriter(file, fieldnames=['cycle', 'iteration', 'arduinoDurationMicros', 'tau', 'tempAmb', 'tempIn', 'tempOut'])
     csv.writeheader()
 
 def updatePlotLines(ax: Axes, lines: List[Line2D], data: np.array) -> None:
@@ -95,11 +94,9 @@ try:
             iterPacket: ArduinoIterationPacket = Packet.readFromSerial(serial)
             print(f"tau = {iterPacket.tau:.4f}, iteration: {iterPacket.iteration}/{iterPacket.nIterations}", end='', flush=True)
             # first packet - before integration step starts
-            startTime = datetime.now()
             benchmarkPacket: ArduinoBenchmarkPacket = Packet.readFromSerial(serial)
             # second packet - after integration step
             benchmarkPacket.unpackFromSerial(serial)
-            elapsed = datetime.now() - startTime
             oneCycleData = np.array([[iterPacket.tau, iterPacket.nodes[0].t, iterPacket.nodes[-1].t]])
 
             # write to file
@@ -108,10 +105,10 @@ try:
                     'cycle': i,
                     'iteration': iterPacket.iteration,
                     'arduinoDurationMicros': benchmarkPacket.arduinoTimeElapsedMicros,
-                    'pcDuration': totalMicrosecons(elapsed),
                     'tempAmb': t,
                     'tempIn': iterPacket.nodes[0].t,
-                    'tempOut': iterPacket.nodes[-1].t
+                    'tempOut': iterPacket.nodes[-1].t,
+                    'tau': iterPacket.tau
                 })
 
             while iterPacket.iteration < iterPacket.nIterations:
@@ -122,11 +119,9 @@ try:
                     break
 
                 # first packet - before integration step starts
-                startTime = datetime.now()
                 benchmarkPacket = Packet.readFromSerial(serial)
                 # second packet - after integration step
                 benchmarkPacket.unpackFromSerial(serial)
-                elapsed = datetime.now() - startTime
 
                 oneCycleData = np.append(oneCycleData, [[iterPacket.tau, iterPacket.nodes[0].t, iterPacket.nodes[-1].t]], axis=0)
 
@@ -137,11 +132,12 @@ try:
                         'cycle': i,
                         'iteration': iterPacket.iteration,
                         'arduinoDurationMicros': benchmarkPacket.arduinoTimeElapsedMicros,
-                        'pcDuration': totalMicrosecons(elapsed),
                         'tempAmb': t,
                         'tempIn': iterPacket.nodes[0].t,
-                        'tempOut': iterPacket.nodes[-1].t
+                        'tempOut': iterPacket.nodes[-1].t,
+                        'tau': iterPacket.tau
                     })
+
 
                 figure.canvas.flush_events()
 
