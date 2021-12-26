@@ -1,5 +1,5 @@
 # Projekt inżynierski
-Podsystem symulujący temperaturę wsadu w maszynie do ciągnienia bezmatrycowego za pomocą metody elementów skończonych, opraty o Arduino.
+Podsystem symulujący temperaturę wsadu w maszynie do ciągnienia bezmatrycowego za pomocą metody elementów skończonych, oparty o Arduino.
 
 ## Klonowanie
 Projekt korzysta z `git submodules`, więc przy klonowaniu trzeba użyć opcji `--recurse-submodules`, w następujący sposób:
