@@ -11,11 +11,10 @@ git clone --recurse-submodules https://github.com/maciejewiczow/inzynierka.git
 Przy pobieraniu submodules nie są niestety dołączane do powstałego zipa, więc trzeba je pobrać ręcznie i umieścić w odpowiednich podfolderach w [./lib](./lib). Linki do odpowiednich repozytoriów na github znajdują sie w pliku [.gitmodules](./.gitmodules).
 
 ## Przegląd projektu
-
-Dostępne parametry kompilacji - [config.h](./config.h)
-Symulacja - [Mesh.h](./Mesh.h#L38-89)
-Obsługa menu - [Menu.h](./Menu.h)
-Pakiety do komunikacji binarnej między Arduino a PC - [communication.h](./communication.h), [communication.py](./communication.py)
-Skrypt symulujący termoparę oraz odczytujący dane iteracji z Arduino - [simulateTempSensor.py](./simulateTempSensor.py)
-Wersja PC projektu -  [PCversion](./PCversion)
+- Dostępne parametry kompilacji - [Config.h](./Config.h)
+- Symulacja - [Mesh.h](./Mesh.h#L38-89)
+- Obsługa menu - [Menu.h](./Menu.h)
+- Pakiety do komunikacji binarnej między Arduino a PC - [communication.h](./communication.h), [communication.py](./communication.py)
+- Skrypt symulujący termoparę oraz odczytujący dane iteracji z Arduino - [simulateTempSensor.py](./simulateTempSensor.py)
+- Wersja PC projektu -  [PCversion](./PCversion)
 
