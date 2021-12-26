@@ -3,6 +3,14 @@
 
 #include "Mesh.h"
 
+/*
+    This file contains all packet definitions that are used in the binary communication protocol
+    between the Arduino and the temperature simulating script. It is mirrored on the python side
+    by the `communication.py` file
+
+    TODO: add synchronization bytes so the communication does not error out when falls out of sync
+*/
+
 enum class PacketType : unsigned int {
     InvalidPacket,
     IterationData,

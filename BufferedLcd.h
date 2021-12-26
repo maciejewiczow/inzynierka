@@ -13,6 +13,9 @@ using namespace lcdut;
 // constexpr uint8_t nColsT = 16;
 // constexpr uint8_t nRowsT = 2;
 
+/*
+    Responsible for buffering the output to the LCD.
+*/
 template<uint8_t nColsT, uint8_t nRowsT>
 class BufferedLcd : public LiquidCrystal_I2C {
 public:
@@ -25,7 +28,7 @@ private:
 
     using super = LiquidCrystal_I2C;
 
-    size_t writeToScreen(const uint8_t *buffer, size_t size) {
+    size_t writeToScreen(const uint8_t* buffer, size_t size) {
         DBG_Serial("Screen write called" << endl);
         size_t n = 0;
 

@@ -11,6 +11,11 @@ using namespace prnt;
 
 class Input;
 
+/*
+    Represents the one-dimensional FEM mesh.
+    Stores all the nodes and has methods that generate their coordinates
+    and preform the integration.
+*/
 template<int nNodes>
 class Mesh {
 public:
