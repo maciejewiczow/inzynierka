@@ -59,6 +59,9 @@ struct MenuItem {
 // constexpr uint8_t nLcdCols = 16;
 // constexpr uint8_t nLcdRows = 2;
 
+/*  Responsible for displaying the menu, reponding to button presses and updating
+    parameter values with new ones entered by the user.
+*/
 template<size_t nItems, uint8_t nLcdCols, uint8_t nLcdRows>
 class Menu {
 public:

@@ -2,7 +2,10 @@
 #define TRIDIAGONAL_HEADER_GUARD
 
 #include <BasicLinearAlgebra.h>
-
+/*
+    Storage class for `BLA::Matrix` that stores only elements on the
+    diagonal, superdiagonal and subdiagonal of the matrix. All others are reported as 0
+*/
 template<size_t dim, typename T = float>
 class Tridiagonal {
 private:

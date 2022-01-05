@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import List
 from serial import Serial
 from enum import IntEnum
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 class PacketType(IntEnum):
     InvalidPacket = 0

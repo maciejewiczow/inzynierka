@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from datetime import datetime
 from typing import List, Optional
 from serial import Serial
@@ -13,6 +14,13 @@ from matplotlib.pyplot import Axes, Line2D
 import numpy as np
 from argparse import ArgumentParser
 import csv as csvModule
+
+"""
+    This script simulates a temperature reading to the Arduino via the serial port.
+    It sends a temperature as a predefined function of time via the serial port and reads back node temperatures and
+    iteration duration measured by Arduino.
+    It also plots it on a graph and saves to a specified file, depending on commandline options provided.
+"""
 
 parser = ArgumentParser()
 
@@ -30,8 +38,13 @@ temp = heatingCurve(args.tauStart, args.tStart, args.tauEnd, args.tEnd)
 
 firstInterrupt = True
 
-_, port = getAndUpdateArduinoPort('./.vscode/arduino.json')
+arduinoConnected, port = getAndUpdateArduinoPort('./.vscode/arduino.json')
 
+if not arduinoConnected:
+    print("This script requires an Arduino device to be connected!")
+    exit(-1)
+
+print("Connecting to the Arduino...")
 serial = Serial(port=port.port, baudrate=57600, timeout=7000)
 time.sleep(8)
 serial.write(0)

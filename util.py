@@ -9,6 +9,7 @@ import json
 
 @dataclass
 class ArduinoPortInfo:
+    """ Represents info about an Arduino device connected through a serial port"""
     port: str
     FQBN: str
     protocol: str = None
@@ -17,6 +18,11 @@ class ArduinoPortInfo:
     core: str = None
 
 def getArduinoPorts() -> List[ArduinoPortInfo]:
+    """
+        Returns a list of Arduino devices connected to the computer.
+        Requires [arduino-cli](https://github.com/arduino/arduino-cli) to be installed and added to the PATH
+    """
+
     lines = bash('arduino-cli board list').split('\n')
     headers = lines[0]
     lines = [line for line in lines[1:] if len(line) == len(headers)]
@@ -58,6 +64,12 @@ def getArduinoPorts() -> List[ArduinoPortInfo]:
     return ports
 
 def getAndUpdateArduinoPort(configFilePath: str) -> Tuple[bool, ArduinoPortInfo]:
+    """
+        Gets a port info about a connected Arduino board, or reads the info from `./vscode/arduino.json`
+        when no board is present. When a connected board is selected and it its not the one saved in `arduino.json`,
+        it updates the json file
+    """
+
     config = dict()
     ports = getArduinoPorts()
 
@@ -101,7 +113,9 @@ def getAndUpdateArduinoPort(configFilePath: str) -> Tuple[bool, ArduinoPortInfo]
 
     return True, port
 
-def bash(cmd, *args):
+def bash(cmd, *args) -> str:
+    """ Executes the specified command and returns it's output as a string"""
+
     argv = [cmd]
     argv.extend(args)
 

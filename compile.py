@@ -1,7 +1,13 @@
+#!/usr/bin/env python3
 import sys
 import warnings
 import subprocess
 from util import getAndUpdateArduinoPort
+
+"""
+    This script compiles the project and uploads it to the currently connected Arduino board.
+    Requires [arduino-cli](https://github.com/arduino/arduino-cli) to be installed and added to the PATH!
+"""
 
 arduinoPresent, portInfo = getAndUpdateArduinoPort('./.vscode/arduino.json')
 
@@ -10,7 +16,6 @@ if not arduinoPresent:
 
 args = [
     "arduino-cli", "compile",
-    "--libraries", "D:\\Projekty\\arduinko\\libraries",
     "--libraries", "./lib",
     "-b", portInfo.FQBN,
 ]

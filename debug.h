@@ -1,8 +1,6 @@
 #ifndef UTIL_HEADER_GUARD
 #define UTIL_HEADER_GUARD
 
-#define DEBUG_PRINTS false
-
 #define nameof(x) #x
 
 #define DBG_HEADER() __func__ << ": "

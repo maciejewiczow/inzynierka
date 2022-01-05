@@ -11,6 +11,11 @@ using namespace prnt;
 
 class Input;
 
+/*
+    Represents the one-dimensional FEM mesh.
+    Stores all the nodes and has methods that generate their coordinates
+    and preform the integration.
+*/
 template<int nNodes>
 class Mesh {
 public:
@@ -31,17 +36,17 @@ public:
     }
 
     void integrateStep(float dTau, float rMax, float tAmbient, const Input& input) {
-        TridiagMat<nNodes> H;
-        BLA::Matrix<nNodes> P;
+        TridiagMat<nNodes> K;
+        BLA::Matrix<nNodes> F;
 
-        H.Fill(0);
-        P.Fill(0);
+        K.Fill(0);
+        F.Fill(0);
 
         for (int i = 0; i < nNodes-1; i++) {
-            BLA::Matrix<2,2> Hlocal;
-            BLA::Matrix<2> Plocal;
-            Hlocal.Fill(0);
-            Plocal.Fill(0);
+            BLA::Matrix<2,2> Klocal;
+            BLA::Matrix<2> Flocal;
+            Klocal.Fill(0);
+            Flocal.Fill(0);
 
             auto& nodeI = nodes[i];
             auto& nodeJ = nodes[i+1];
@@ -61,22 +66,22 @@ public:
 
                 auto tmp = input.C * input.Ro * dR * r * intPoint.weight;
 
-                Hlocal(0,0) += input.K*r*intPoint.weight/dR + tmp*n0*n0/dTau;
-                Hlocal(0,1) += -input.K*r*intPoint.weight/dR + tmp*n0*n1/dTau;
-                Hlocal(1,0) = Hlocal(0,1);
-                Hlocal(1,1) += input.K*r*intPoint.weight/dR + tmp*n1*n1/dTau + 2.f*alphaAir*rMax;
+                Klocal(0,0) += input.K*r*intPoint.weight/dR + tmp*n0*n0/dTau;
+                Klocal(0,1) += -input.K*r*intPoint.weight/dR + tmp*n0*n1/dTau;
+                Klocal(1,0) = Klocal(0,1);
+                Klocal(1,1) += input.K*r*intPoint.weight/dR + tmp*n1*n1/dTau + 2.f*alphaAir*rMax;
 
-                Plocal(0) += tmp*t*n0/dTau;
-                Plocal(1) += tmp*t*n1/dTau + 2.f*alphaAir*rMax*tAmbient;
+                Flocal(0) += tmp*t*n0/dTau;
+                Flocal(1) += tmp*t*n1/dTau + 2.f*alphaAir*rMax*tAmbient;
                 watchdogTimer.reset();
             }
 
-            P.template Submatrix<2, 1>(i, 0) += Plocal;
-            H.template Submatrix<2, 2>(i, i) += Hlocal;
+            F.template Submatrix<2, 1>(i, 0) += Flocal;
+            K.template Submatrix<2, 2>(i, i) += Klocal;
         }
 
-        auto decomposition = BLA::LUDecompose(H);
-        auto t = BLA::LUSolve(decomposition, P);
+        auto decomposition = BLA::LUDecompose(K);
+        auto t = BLA::LUSolve(decomposition, F);
         watchdogTimer.reset();
 
         for (int i = 0; i < nNodes; i++)

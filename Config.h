@@ -1,10 +1,12 @@
 #ifndef CONFIG_HEADER_GUARD
 #define CONFIG_HEADER_GUARD
 
+/* This file contains all macros that alter the compilation of the software */
+
 // misc
 #define SERIAL_BAUD 57600
 
-// Interface buttons
+// Interface button pins
 #define SET_BUTTON_PIN 7
 #define LEFT_BUTTON_PIN 8
 #define RIGHT_BUTTON_PIN 9
@@ -30,6 +32,9 @@
 #define TELEMETRY false
 
 // number of mesh elements
-#define MESH_SIZE 15
+#define MESH_SIZE 10
+
+// debug
+#define DEBUG_PRINTS false
 
 #endif
