@@ -13,3 +13,6 @@
 [submodule "lib/BasicLinearAlgebra"]
 	path = lib/BasicLinearAlgebra
 	url = https://github.com/tomstewart89/BasicLinearAlgebra.git
+[submodule "lib/LiquidCrystal_I2C"]
+	path = lib/LiquidCrystal_I2C
+	url = https://github.com/maciejewiczow/LiquidCrystal_I2C.git
