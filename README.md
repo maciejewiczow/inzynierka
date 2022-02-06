@@ -21,3 +21,10 @@ Za kompilację i upload projektu do Arduino odpowiada skrypt [compile.py](./comp
 - Skrypt symulujący termoparę oraz odczytujący dane iteracji z Arduino - [simulateTempSensor.py](./simulateTempSensor.py)
 - Wersja PC projektu -  [PCversion](./PCversion)
 
+## Schemat połączeń
+![](resources/połączenia.png)
+1 - Termopara
+2 - Wzmacniacz sygnału termopary [MAX31855](https://www.adafruit.com/product/269)
+3 - Arduino UNO
+4 - Zestaw przycisków
+5 - Ekran LCD
